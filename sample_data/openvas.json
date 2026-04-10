@@ -1,0 +1,11 @@
+{
+  "results": [
+    {
+      "host": "192.168.1.10",
+      "port": 80,
+      "name": "Apache HTTP Server Vulnerability",
+      "description": "Remote code execution possible. Exploit available.",
+      "cve": "CVE-2021-41773"
+    }
+  ]
+}

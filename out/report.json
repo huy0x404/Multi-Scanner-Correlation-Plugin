@@ -1,0 +1,40 @@
+{
+  "generated_at": "2026-04-10T14:16:17.068119+00:00",
+  "assets": [
+    {
+      "host": "192.168.1.10",
+      "port": 22,
+      "service": "ssh",
+      "findings": [],
+      "cves": [],
+      "evidence": [
+        "open_port"
+      ],
+      "score": 1,
+      "risk": "LOW",
+      "reason": "Open service exposed"
+    },
+    {
+      "host": "192.168.1.10",
+      "port": 80,
+      "service": "http",
+      "findings": [
+        "Nikto: XSS found at /admin",
+        "Traffic: many_http_500_responses"
+      ],
+      "cves": [
+        "CVE-2021-41773"
+      ],
+      "evidence": [
+        "cve",
+        "exploit",
+        "open_port",
+        "traffic_signal",
+        "web_vuln"
+      ],
+      "score": 21,
+      "risk": "CRITICAL",
+      "reason": "Web service exposed with vulnerability and CVE"
+    }
+  ]
+}

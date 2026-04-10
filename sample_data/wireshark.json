@@ -1,0 +1,9 @@
+{
+  "packets": [
+    {
+      "host": "192.168.1.10",
+      "port": 80,
+      "signal": "many_http_500_responses"
+    }
+  ]
+}

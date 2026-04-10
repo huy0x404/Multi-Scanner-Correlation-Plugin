@@ -1,0 +1,9 @@
+{
+  "weights": {
+    "open_port": 1,
+    "web_vuln": 3,
+    "cve": 5,
+    "exploit": 10,
+    "traffic_signal": 2
+  }
+}

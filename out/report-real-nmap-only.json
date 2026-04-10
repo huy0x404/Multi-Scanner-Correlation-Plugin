@@ -1,0 +1,187 @@
+{
+  "generated_at": "2026-04-10T14:41:21.098097+00:00",
+  "assets": [
+    {
+      "host": "192.168.1.5",
+      "port": 80,
+      "service": "http",
+      "findings": [],
+      "cves": [],
+      "evidence": [
+        "open_port"
+      ],
+      "score": 1,
+      "risk": "LOW",
+      "reason": "Open service exposed"
+    },
+    {
+      "host": "192.168.1.5",
+      "port": 135,
+      "service": "msrpc",
+      "findings": [],
+      "cves": [],
+      "evidence": [
+        "open_port"
+      ],
+      "score": 1,
+      "risk": "LOW",
+      "reason": "Open service exposed"
+    },
+    {
+      "host": "192.168.1.5",
+      "port": 139,
+      "service": "netbios-ssn",
+      "findings": [],
+      "cves": [],
+      "evidence": [
+        "open_port"
+      ],
+      "score": 1,
+      "risk": "LOW",
+      "reason": "Open service exposed"
+    },
+    {
+      "host": "192.168.1.5",
+      "port": 443,
+      "service": "http",
+      "findings": [],
+      "cves": [],
+      "evidence": [
+        "open_port"
+      ],
+      "score": 1,
+      "risk": "LOW",
+      "reason": "Open service exposed"
+    },
+    {
+      "host": "192.168.1.5",
+      "port": 445,
+      "service": "microsoft-ds",
+      "findings": [],
+      "cves": [],
+      "evidence": [
+        "open_port"
+      ],
+      "score": 1,
+      "risk": "LOW",
+      "reason": "Open service exposed"
+    },
+    {
+      "host": "192.168.1.5",
+      "port": 3306,
+      "service": "mysql",
+      "findings": [],
+      "cves": [],
+      "evidence": [
+        "open_port"
+      ],
+      "score": 1,
+      "risk": "LOW",
+      "reason": "Open service exposed"
+    },
+    {
+      "host": "192.168.1.5",
+      "port": 5040,
+      "service": "unknown",
+      "findings": [],
+      "cves": [],
+      "evidence": [
+        "open_port"
+      ],
+      "score": 1,
+      "risk": "LOW",
+      "reason": "Open service exposed"
+    },
+    {
+      "host": "192.168.1.5",
+      "port": 7680,
+      "service": "pando-pub",
+      "findings": [],
+      "cves": [],
+      "evidence": [
+        "open_port"
+      ],
+      "score": 1,
+      "risk": "LOW",
+      "reason": "Open service exposed"
+    },
+    {
+      "host": "192.168.1.5",
+      "port": 49664,
+      "service": "msrpc",
+      "findings": [],
+      "cves": [],
+      "evidence": [
+        "open_port"
+      ],
+      "score": 1,
+      "risk": "LOW",
+      "reason": "Open service exposed"
+    },
+    {
+      "host": "192.168.1.5",
+      "port": 49665,
+      "service": "msrpc",
+      "findings": [],
+      "cves": [],
+      "evidence": [
+        "open_port"
+      ],
+      "score": 1,
+      "risk": "LOW",
+      "reason": "Open service exposed"
+    },
+    {
+      "host": "192.168.1.5",
+      "port": 49666,
+      "service": "msrpc",
+      "findings": [],
+      "cves": [],
+      "evidence": [
+        "open_port"
+      ],
+      "score": 1,
+      "risk": "LOW",
+      "reason": "Open service exposed"
+    },
+    {
+      "host": "192.168.1.5",
+      "port": 49667,
+      "service": "msrpc",
+      "findings": [],
+      "cves": [],
+      "evidence": [
+        "open_port"
+      ],
+      "score": 1,
+      "risk": "LOW",
+      "reason": "Open service exposed"
+    },
+    {
+      "host": "192.168.1.5",
+      "port": 49668,
+      "service": "msrpc",
+      "findings": [],
+      "cves": [],
+      "evidence": [
+        "open_port"
+      ],
+      "score": 1,
+      "risk": "LOW",
+      "reason": "Open service exposed"
+    },
+    {
+      "host": "192.168.1.5",
+      "port": 49670,
+      "service": "msrpc",
+      "findings": [],
+      "cves": [],
+      "evidence": [
+        "open_port"
+      ],
+      "score": 1,
+      "risk": "LOW",
+      "reason": "Open service exposed"
+    }
+  ]
+}

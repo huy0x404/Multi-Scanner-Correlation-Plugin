@@ -1,0 +1,7 @@
+- Nikto v2.5.0
++ Target IP:          192.168.1.10
++ Target Hostname:    app.local
++ Target Port:        80
++ OSVDB-3092: /admin/: This might be sensitive content.
++ /admin/: X-Frame-Options header is not present.
++ End Time:           2026-04-10 14:00:00 (GMT0)

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report>
+  <results>
+    <result>
+      <host>192.168.1.10</host>
+      <port>80/tcp</port>
+      <description>Remote code execution possible. Exploit available.</description>
+      <nvt>
+        <name>Apache HTTP Server Vulnerability</name>
+        <cve>CVE-2021-41773</cve>
+        <tags>remote code execution|exploit available</tags>
+        <refs>
+          <ref type="cve" id="CVE-2021-42013" />
+        </refs>
+      </nvt>
+    </result>
+  </results>
+</report>

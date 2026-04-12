@@ -1,4 +1,4 @@
-import unittest
+﻿import unittest
 
 from mscp.engine.correlation import correlate
 from mscp.engine.risk import score_assets
@@ -34,6 +34,57 @@ class TestEngine(unittest.TestCase):
         self.assertEqual(len(assets), 1)
         self.assertIn("Traffic: suspicious_traffic x2", assets[0].findings)
         self.assertIn("Traffic: udp_traffic", assets[0].findings)
+
+    def test_loopback_low_value_noise_is_suppressed(self) -> None:
+        assets = correlate(
+            nmap=[],
+            nikto=[],
+            openvas=[],
+            wireshark=[
+                WiresharkSignal(host="127.0.0.1", port=5000, signal="suspicious_traffic"),
+                WiresharkSignal(host="127.0.0.1", port=5000, signal="udp_traffic"),
+            ],
+        )
+        self.assertEqual(len(assets), 0)
+
+    def test_high_volume_traffic_becomes_high_risk(self) -> None:
+        assets = correlate(
+            nmap=[],
+            nikto=[],
+            openvas=[],
+            wireshark=[WiresharkSignal(host="10.10.10.10", port=3306, signal="suspicious_traffic") for _ in range(400)],
+        )
+        scored = score_assets(assets)
+
+        self.assertEqual(len(scored), 1)
+        self.assertIn("traffic_anomaly", scored[0].evidence)
+        self.assertEqual(scored[0].risk, "MEDIUM")
+
+    def test_extreme_volume_traffic_becomes_critical(self) -> None:
+        assets = correlate(
+            nmap=[],
+            nikto=[],
+            openvas=[],
+            wireshark=[WiresharkSignal(host="10.10.10.11", port=3306, signal="suspicious_traffic") for _ in range(3500)],
+        )
+        scored = score_assets(assets)
+
+        self.assertEqual(len(scored), 1)
+        self.assertIn("dos_indicator", scored[0].evidence)
+        self.assertEqual(scored[0].risk, "HIGH")
+
+    def test_web_heavy_traffic_is_alertable(self) -> None:
+        assets = correlate(
+            nmap=[],
+            nikto=[],
+            openvas=[],
+            wireshark=[WiresharkSignal(host="127.0.0.1", port=80, signal="suspicious_traffic") for _ in range(1200)],
+        )
+        scored = score_assets(assets)
+
+        self.assertEqual(len(scored), 1)
+        self.assertIn("dos_indicator", scored[0].evidence)
+        self.assertEqual(scored[0].risk, "HIGH")
 
 
 if __name__ == "__main__":

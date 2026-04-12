@@ -10,6 +10,8 @@ DEFAULT_WEIGHTS = {
     "cve": 5,
     "exploit": 10,
     "traffic_signal": 2,
+    "traffic_anomaly": 5,
+    "dos_indicator": 10,
 }
 
 
@@ -28,6 +30,13 @@ def explain(asset: CorrelatedAsset) -> str:
     has_vuln = "web_vuln" in asset.evidence
     has_cve = "cve" in asset.evidence
     has_exploit = "exploit" in asset.evidence
+    has_traffic_anomaly = "traffic_anomaly" in asset.evidence
+    has_dos = "dos_indicator" in asset.evidence
+
+    if has_dos:
+        return "Possible DoS behavior detected from sustained high-volume traffic"
+    if has_traffic_anomaly:
+        return "Traffic volume anomaly detected on this endpoint"
 
     if web_service and has_vuln and has_cve:
         return "Web service exposed with vulnerability and CVE"

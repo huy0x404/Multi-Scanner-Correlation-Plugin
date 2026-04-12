@@ -1,0 +1,20 @@
+[
+  {
+    "_source": {
+      "layers": {
+        "ip": {
+          "ip.src": "192.168.1.5",
+          "ip.dst": "192.168.1.10"
+        },
+        "tcp": {
+          "tcp.srcport": "51515",
+          "tcp.dstport": "80",
+          "tcp.flags.str": "...R...."
+        },
+        "http": {
+          "http.response.code": "500"
+        }
+      }
+    }
+  }
+]

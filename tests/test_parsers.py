@@ -4,6 +4,7 @@ import unittest
 from mscp.parsers.nikto_parser import parse_nikto
 from mscp.parsers.nmap_parser import parse_nmap_xml
 from mscp.parsers.openvas_parser import parse_openvas
+from mscp.parsers.wireshark_parser import parse_wireshark
 
 
 class TestNmapParser(unittest.TestCase):
@@ -30,6 +31,19 @@ class TestNmapParser(unittest.TestCase):
         findings = parse_openvas(Path("sample_data/openvas.xml"))
         cves = sorted(x.cve for x in findings)
         self.assertEqual(cves, ["CVE-2021-41773", "CVE-2021-42013"])
+
+    def test_parse_wireshark_tshark_json(self) -> None:
+        signals = parse_wireshark(Path("sample_data/wireshark_tshark.json"))
+        self.assertEqual(len(signals), 1)
+        self.assertEqual(signals[0].host, "192.168.1.10")
+        self.assertEqual(signals[0].port, 80)
+        self.assertEqual(signals[0].signal, "many_http_500_responses")
+
+    def test_parse_wireshark_skips_unknown_zero(self) -> None:
+        signals = parse_wireshark(Path("sample_data/wireshark_noise.json"))
+        self.assertEqual(len(signals), 1)
+        self.assertEqual(signals[0].host, "192.168.1.1")
+        self.assertEqual(signals[0].port, 137)
 
 
 if __name__ == "__main__":

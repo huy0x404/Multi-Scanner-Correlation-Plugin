@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict
 from mscp.parsers.nikto_parser import parse_nikto
 from mscp.parsers.nmap_parser import parse_nmap_xml
 from mscp.parsers.openvas_parser import parse_openvas
-from mscp.parsers.wireshark_parser import parse_wireshark_json
+from mscp.parsers.wireshark_parser import parse_wireshark
 
 
 @dataclass
@@ -35,5 +35,5 @@ class PluginRegistry:
         registry.register(ScannerPlugin(name="nmap", parser=parse_nmap_xml))
         registry.register(ScannerPlugin(name="nikto", parser=parse_nikto))
         registry.register(ScannerPlugin(name="openvas", parser=parse_openvas))
-        registry.register(ScannerPlugin(name="wireshark", parser=parse_wireshark_json))
+        registry.register(ScannerPlugin(name="wireshark", parser=parse_wireshark))
         return registry

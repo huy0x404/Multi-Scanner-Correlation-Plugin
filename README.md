@@ -18,19 +18,36 @@ This project does not replace scanners. It ingests their outputs, correlates fin
 - Smart alerting for high risk findings
 - Scheduler mode that only alerts when results changed
 - Telegram integration
+- AI-style remediation suggestions per asset
+- Local web dashboard for operations view
 
 ## Supported Input Formats
 
 - Nmap: XML
 - Nikto: JSON, TXT
 - OpenVAS: JSON, XML
-- Wireshark/tshark: JSON
+- Wireshark/tshark: JSON, PCAP, PCAPNG (via tshark)
 
 ## Install
 
 ```powershell
 py -3 -m pip install -r requirements.txt
 ```
+
+Create `.env` for Telegram (optional but recommended):
+
+```env
+TELEGRAM_BOT_TOKEN=123456:ABCDEF...
+TELEGRAM_CHAT_ID=123456789
+```
+
+You can also copy from `.env.example`:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Then update values in `.env`.
 
 ## Quick Start
 
@@ -49,6 +66,33 @@ py -3 -m mscp.cli report \
   --openvas .\sample_data\openvas.xml \
   --wireshark .\sample_data\wireshark.json \
   --risk-config .\config\risk_weights.json \
+  --out .\out\report.json
+```
+
+Analysis modes (for practical workflows):
+
+- `--analysis-mode auto`: use all provided sources
+- `--analysis-mode 1`: analyze first 1 source (priority: nmap -> nikto -> openvas -> wireshark)
+- `--analysis-mode 2`: analyze first 2 sources
+- `--analysis-mode 3`: analyze first 3 sources
+- `--analysis-mode 4`: analyze all 4 sources
+
+Examples:
+
+```powershell
+py -3 -m mscp.cli report --nmap .\data\nmap.xml --analysis-mode 1 --out .\out\report-nmap-only.json
+py -3 -m mscp.cli report --nmap .\data\nmap.xml --wireshark .\data\wireshark.json --analysis-mode 2 --out .\out\report-dual.json
+```
+
+Run directly from Wireshark capture file:
+
+```powershell
+py -3 -m mscp.cli report \
+  --nmap .\data\nmap.xml \
+  --nikto .\data\nikto.txt \
+  --openvas .\data\openvas.xml \
+  --wireshark .\data\capture.pcapng \
+  --risk-config .\config\risk_weights.yaml \
   --out .\out\report.json
 ```
 
@@ -77,6 +121,44 @@ py -3 -m mscp.cli report \
 ```
 
 `--alert-min-risk` accepts: `LOW`, `MEDIUM`, `HIGH`, `CRITICAL`.
+
+## Web Dashboard
+
+Start dashboard from latest report:
+
+```powershell
+py -3 -m mscp.cli dashboard --report .\out\report.json --host 127.0.0.1 --port 8787
+```
+
+Use `--no-browser` if running on server/SSH terminal.
+If the selected port is busy, dashboard automatically tries next ports.
+
+Live dashboard with source files (switch mode 1/2/3/4 directly on web):
+
+```powershell
+py -3 -m mscp.cli dashboard \
+  --report .\out\report-live.json \
+  --nmap .\Save\data_test\192_168.1.5_1st.xml \
+  --wireshark .\Save\data_test\wireshark_json_1.json \
+  --risk-config .\config\risk_weights.json \
+  --dotenv .\.env \
+  --analysis-mode 2 \
+  --host 127.0.0.1 --port 8787
+```
+
+Then open `http://127.0.0.1:8787` and change Analysis Mode on the page.
+
+On dashboard page:
+
+- You can input any source file paths (any folder) for nmap/nikto/openvas/wireshark.
+- Click `Analyze` to re-run analysis.
+- Click `Send Telegram Alert` to send alert using `.env` credentials.
+- Use mode selector `auto/1/2/3/4` directly in the web UI.
+
+Important:
+
+- Dashboard is not forced to one folder. You can analyze files from any absolute path.
+- Dashboard is not forced to all scanners. You can run with 1 source, 2 sources, or 4 sources.
 
 ## Scheduler (Only Alert On New Changes)
 
@@ -162,6 +244,8 @@ Wireshark/tshark JSON (example):
 tshark -r .\capture.pcapng -T json > .\data\wireshark.json
 ```
 
+If you pass `.pcap` or `.pcapng` directly to `--wireshark`, the plugin will call `tshark` automatically. Ensure `tshark` is installed and available in PATH.
+
 ## Output Shape
 
 ```json
@@ -176,8 +260,10 @@ tshark -r .\capture.pcapng -T json > .\data\wireshark.json
       "cves": ["CVE-2021-41773"],
       "evidence": ["open_port", "web_vuln", "cve"],
       "score": 19,
+      "score_details": {"open_port": 1, "web_vuln": 3, "cve": 5, "exploit": 10},
       "risk": "HIGH",
-      "reason": "Web service exposed with vulnerability and CVE"
+      "reason": "Web service exposed with vulnerability and CVE",
+      "ai_suggestions": ["Server nay co the bi SQL Injection..."]
     }
   ]
 }

@@ -47,10 +47,14 @@ def score_assets(assets: List[CorrelatedAsset], weights: Dict[str, int] | None =
 
     for asset in assets:
         score = 0
+        details: Dict[str, int] = {}
         for ev in asset.evidence:
-            score += active_weights.get(ev, 0)
+            val = int(active_weights.get(ev, 0))
+            score += val
+            details[ev] = val
 
         asset.score = score
+        asset.score_details = dict(sorted(details.items()))
         asset.risk = classify(score)
         asset.reason = explain(asset)
 

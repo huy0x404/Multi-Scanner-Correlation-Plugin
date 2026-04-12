@@ -19,6 +19,22 @@ class TestEngine(unittest.TestCase):
         self.assertEqual(scored[0].score, 21)
         self.assertEqual(scored[0].risk, "CRITICAL")
 
+    def test_traffic_findings_are_aggregated(self) -> None:
+        assets = correlate(
+            nmap=[],
+            nikto=[],
+            openvas=[],
+            wireshark=[
+                WiresharkSignal(host="10.0.0.2", port=443, signal="suspicious_traffic"),
+                WiresharkSignal(host="10.0.0.2", port=443, signal="suspicious_traffic"),
+                WiresharkSignal(host="10.0.0.2", port=443, signal="udp_traffic"),
+            ],
+        )
+
+        self.assertEqual(len(assets), 1)
+        self.assertIn("Traffic: suspicious_traffic x2", assets[0].findings)
+        self.assertIn("Traffic: udp_traffic", assets[0].findings)
+
 
 if __name__ == "__main__":
     unittest.main()

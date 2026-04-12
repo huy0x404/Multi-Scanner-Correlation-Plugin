@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 from typing import Dict, List, Tuple
 
 from mscp.models import CorrelatedAsset, NiktoVuln, NmapService, OpenVASCve, WiresharkSignal
@@ -42,8 +42,14 @@ def correlate(
     for key, signals in grouped_signals.items():
         if key not in assets:
             assets[key] = CorrelatedAsset(host=key[0], port=key[1])
-        for sig in signals:
-            assets[key].findings.append(f"Traffic: {sig}")
+
+        # Summarize repeated traffic patterns into actionable counts.
+        for sig, count in sorted(Counter(signals).items()):
+            if count > 1:
+                assets[key].findings.append(f"Traffic: {sig} x{count}")
+            else:
+                assets[key].findings.append(f"Traffic: {sig}")
+
         assets[key].evidence.add("traffic_signal")
 
     return sorted(assets.values(), key=lambda x: (x.host, x.port))

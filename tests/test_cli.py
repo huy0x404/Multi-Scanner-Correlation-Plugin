@@ -1,7 +1,15 @@
 import unittest
 from argparse import Namespace
+from unittest.mock import patch
 
-from mscp.cli import _has_any_diff, _has_input_sources, _is_at_least, _should_alert
+from mscp.cli import (
+    _has_any_diff,
+    _has_input_sources,
+    _is_at_least,
+    _prompt_value,
+    _select_sources,
+    _should_alert,
+)
 
 
 class TestCliAlertThreshold(unittest.TestCase):
@@ -39,6 +47,38 @@ class TestCliAlertThreshold(unittest.TestCase):
     def test_has_any_diff(self) -> None:
         self.assertFalse(_has_any_diff({"added": [], "removed": [], "risk_changed": []}))
         self.assertTrue(_has_any_diff({"added": [{"host": "1.1.1.1"}], "removed": [], "risk_changed": []}))
+
+    @patch("builtins.input", return_value='"D:\\CODE_WORD\\a.xml"')
+    def test_prompt_value_strips_double_quotes(self, _mock_input) -> None:
+        value = _prompt_value("Path")
+        self.assertEqual(value, "D:\\CODE_WORD\\a.xml")
+
+    @patch("builtins.input", return_value="'D:\\CODE_WORD\\b.xml'")
+    def test_prompt_value_strips_single_quotes(self, _mock_input) -> None:
+        value = _prompt_value("Path")
+        self.assertEqual(value, "D:\\CODE_WORD\\b.xml")
+
+    def test_select_sources_auto(self) -> None:
+        args = Namespace(
+            nmap="a.xml",
+            nikto=None,
+            openvas="o.xml",
+            wireshark="w.json",
+            analysis_mode="auto",
+        )
+        selected = _select_sources(args)
+        self.assertEqual(set(selected.keys()), {"nmap", "openvas", "wireshark"})
+
+    def test_select_sources_mode_2(self) -> None:
+        args = Namespace(
+            nmap="a.xml",
+            nikto="n.txt",
+            openvas="o.xml",
+            wireshark=None,
+            analysis_mode="2",
+        )
+        selected = _select_sources(args)
+        self.assertEqual(list(selected.keys()), ["nmap", "nikto"])
 
 
 if __name__ == "__main__":

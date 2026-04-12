@@ -43,8 +43,10 @@ class CorrelatedAsset:
     cves: Set[str] = field(default_factory=set)
     evidence: Set[str] = field(default_factory=set)
     score: int = 0
+    score_details: dict[str, int] = field(default_factory=dict)
     risk: str = "LOW"
     reason: str = ""
+    ai_suggestions: List[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return {
@@ -55,6 +57,8 @@ class CorrelatedAsset:
             "cves": sorted(self.cves),
             "evidence": sorted(self.evidence),
             "score": self.score,
+            "score_details": self.score_details,
             "risk": self.risk,
             "reason": self.reason,
+            "ai_suggestions": self.ai_suggestions,
         }

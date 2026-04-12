@@ -1,24 +1,5 @@
-// Run dashboard without report
+﻿// Run dashboard without report
 & ".\.venv\Scripts\python.exe" -m mscp.cli dashboard --dotenv ".\.env" --host 127.0.0.1 --port 8787 --no-browser
 
 // Run dashboard with report
 & ".\.venv\Scripts\python.exe" -m mscp.cli dashboard --report ".\out\report.json" --dotenv ".\.env" --host 127.0.0.1 --port 8787 --no-browser
-
-
- & "d:/CODE_WORD/Multi-Scanner Correlation Plugin/.venv/Scripts/python.exe" 
- -m mscp.cli dashboard --report "out/report.json" 
- --dotenv ".env" 
- --wireshark "D:/CODE_WORD/Multi-Scanner Correlation Plugin/Save/data_12_04/eLibraryofVKU_DOS.json" 
- --host 127.0.0.1 --port 8787
-
- =>
-& d:/CODE_WORD/Multi-Scanner Correlation Plugin/.venv/Scripts/python.exe"
- -m mscp.cli dashboard --report .\out\report.json 
- --host 127.0.0.1 
- --port 8787 
- --no-browser
-
-
-
-
-

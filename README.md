@@ -274,3 +274,4 @@ If you pass `.pcap` or `.pcapng` directly to `--wireshark`, the plugin will call
 - Parsing logic is conservative and format-tolerant.
 - Adapt parser mappings to your scanner export format if needed.
 - Add more scanner plugins by implementing `ScannerPlugin` in `mscp/plugins.py`.
+- Detailed implementation notes for the latest major feature set: `COMMIT_003618B_DETAILS.md`.

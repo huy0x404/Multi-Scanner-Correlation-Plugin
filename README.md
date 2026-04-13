@@ -9,6 +9,10 @@ A practical plugin-style security analytics project that extends scanner outputs
 
 This project does not replace scanners. It ingests their outputs, correlates findings, computes risk, detects changes between scans, and sends smart alerts.
 
+## Docs
+
+- Nikto on Windows with Defender enabled: [docs/nikto-windows-defender.md](docs/nikto-windows-defender.md)
+
 ## What You Get
 
 - Unified asset/finding model across tools

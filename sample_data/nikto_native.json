@@ -1,0 +1,19 @@
+{
+  "hosts": [
+    {
+      "ip": "127.0.0.1",
+      "port": 80,
+      "vulnerabilities": [
+        {
+          "uri": "/admin",
+          "method": "GET",
+          "summary": "Possible admin interface exposure",
+          "osvdb": "3092"
+        },
+        {
+          "msg": "OSVDB-3092: /admin: This might be an admin login page"
+        }
+      ]
+    }
+  ]
+}

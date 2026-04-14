@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from typing import List
+from typing import Any, List
 
 from mscp.models import NiktoVuln
 
@@ -21,32 +21,124 @@ _META_PREFIXES = (
 )
 
 
+def _to_int(value: Any, default: int = 80) -> int:
+    try:
+        return int(str(value))
+    except (TypeError, ValueError):
+        return default
+
+
+def _normalize_host(value: Any) -> str:
+    host = str(value or "").strip()
+    return host if host else "unknown"
+
+
+def _extract_osvdb(message: str) -> str | None:
+    match = _OSVDB_LINE_RE.search(message)
+    if match:
+        return match.group(1)
+    return None
+
+
+def _normalize_message(item: dict[str, Any]) -> str:
+    msg = str(item.get("msg") or item.get("description") or item.get("item") or "").strip()
+    if msg:
+        return msg
+
+    # Some Nikto JSON variants provide URI + method + summary instead of msg.
+    uri = str(item.get("uri") or item.get("path") or "").strip()
+    method = str(item.get("method") or "").strip().upper()
+    summary = str(item.get("summary") or item.get("title") or "Nikto finding").strip()
+
+    if uri and method:
+        return f"{method} {uri} - {summary}"
+    if uri:
+        return f"{uri} - {summary}"
+    return summary
+
+
+def _append_nikto_vuln(vulns: List[NiktoVuln], seen: set[tuple[str, int, str, str | None]], item: dict[str, Any]) -> None:
+    host = _normalize_host(item.get("host") or item.get("ip") or item.get("hostname"))
+    port = _to_int(item.get("port") or item.get("target_port") or item.get("targetport"), default=80)
+    detail = _normalize_message(item)
+
+    osvdb_raw = item.get("osvdb")
+    osvdb = str(osvdb_raw).strip() if osvdb_raw else None
+    if osvdb is None:
+        osvdb = _extract_osvdb(detail)
+
+    key = (host, port, detail, osvdb)
+    if key in seen:
+        return
+
+    seen.add(key)
+    vulns.append(NiktoVuln(host=host, port=port, item=detail, osvdb=osvdb))
+
+
+def _coerce_json_entries(data: Any) -> List[dict[str, Any]]:
+    # Supported shapes:
+    # 1) {"vulnerabilities": [{...}]}
+    # 2) [{...}] simple list
+    # 3) {"hosts": [{"ip":..., "port":..., "vulnerabilities": [...]}, ...]}
+    # 4) {"results": [...]} or {"findings": [...]} variants
+    if isinstance(data, list):
+        return [x for x in data if isinstance(x, dict)]
+
+    if not isinstance(data, dict):
+        return []
+
+    entries: List[dict[str, Any]] = []
+
+    top_level = data.get("vulnerabilities") or data.get("results") or data.get("findings")
+    if isinstance(top_level, list):
+        entries.extend([x for x in top_level if isinstance(x, dict)])
+
+    hosts = data.get("hosts")
+    if isinstance(hosts, list):
+        for host_item in hosts:
+            if not isinstance(host_item, dict):
+                continue
+            host = host_item.get("host") or host_item.get("ip") or host_item.get("hostname")
+            port = host_item.get("port") or host_item.get("target_port") or host_item.get("targetport")
+
+            host_findings = (
+                host_item.get("vulnerabilities")
+                or host_item.get("findings")
+                or host_item.get("items")
+                or host_item.get("results")
+                or []
+            )
+            if not isinstance(host_findings, list):
+                continue
+
+            for f in host_findings:
+                if not isinstance(f, dict):
+                    continue
+                merged = dict(f)
+                merged.setdefault("host", host)
+                merged.setdefault("port", port)
+                entries.append(merged)
+
+    return entries
+
+
 def parse_nikto_json(path: str | Path) -> List[NiktoVuln]:
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
     vulns: List[NiktoVuln] = []
-
-    if isinstance(data, dict) and "vulnerabilities" in data:
-        entries = data["vulnerabilities"]
-    elif isinstance(data, list):
-        entries = data
-    else:
-        entries = []
+    seen: set[tuple[str, int, str, str | None]] = set()
+    entries = _coerce_json_entries(data)
 
     for item in entries:
-        host = str(item.get("host", "unknown"))
-        port = int(item.get("port", 80))
-        detail = str(item.get("msg") or item.get("description") or "Nikto finding")
-        osvdb = item.get("osvdb")
-
-        vulns.append(NiktoVuln(host=host, port=port, item=detail, osvdb=str(osvdb) if osvdb else None))
+        _append_nikto_vuln(vulns, seen, item)
 
     return vulns
 
 
 def parse_nikto_txt(path: str | Path) -> List[NiktoVuln]:
     vulns: List[NiktoVuln] = []
+    seen: set[tuple[str, int, str, str | None]] = set()
     current_host = "unknown"
     current_port = 80
 
@@ -80,10 +172,16 @@ def parse_nikto_txt(path: str | Path) -> List[NiktoVuln]:
             if "OSVDB-" not in line and ":" not in line:
                 continue
 
-            osvdb_match = _OSVDB_LINE_RE.search(line)
-            osvdb = osvdb_match.group(1) if osvdb_match else None
             message = line.lstrip("+").strip()
-            vulns.append(NiktoVuln(host=current_host, port=current_port, item=message, osvdb=osvdb))
+            _append_nikto_vuln(
+                vulns,
+                seen,
+                {
+                    "host": current_host,
+                    "port": current_port,
+                    "msg": message,
+                },
+            )
 
     return vulns
 

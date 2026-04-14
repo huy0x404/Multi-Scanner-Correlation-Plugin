@@ -165,3 +165,132 @@ Neu chay khong duoc, kiem theo thu tu:
 - Chi scan he thong ban so huu hoac duoc cap phep ro rang.
 - Giu Defender bat, chi them exclusion toi thieu.
 - Tach thu muc cong cu security khoi source code va du lieu quan trong.
+
+## 13) Khi Nikto Chay Tren Linux/VM: Mang File Ve Windows De Phan Tich
+
+Neu ban scan tren Ubuntu (VirtualBox/WSL/may Linux khac), ban chi can dua file Nikto output ve thu muc `out` tren Windows roi chay `mscp.cli report`.
+
+Project nay chap nhan ca:
+
+- Nikto JSON
+- Nikto TXT
+
+### 13.1 Lenh phan tich tren Windows (sau khi da co file)
+
+JSON:
+
+```powershell
+Set-Location "D:\CODE_WORD\Multi-Scanner Correlation Plugin"
+& ".\.venv\Scripts\python.exe" -m mscp.cli report --nikto ".\out\nikto_export.json" --out ".\out\report_nikto.json"
+```
+
+TXT:
+
+```powershell
+Set-Location "D:\CODE_WORD\Multi-Scanner Correlation Plugin"
+& ".\.venv\Scripts\python.exe" -m mscp.cli report --nikto ".\out\nikto_export.txt" --out ".\out\report_nikto.json"
+```
+
+Mo dashboard:
+
+```powershell
+& ".\.venv\Scripts\python.exe" -m mscp.cli dashboard --report ".\out\report_nikto.json" --host 127.0.0.1 --port 8787 --no-browser
+```
+
+## 14) Phuong Phap A: VirtualBox Shared Folder (khuyen dung)
+
+### 14.1 Tren Windows host
+
+- VM Settings -> Shared Folders -> Add
+- Folder Path: `D:\CODE_WORD\Multi-Scanner Correlation Plugin\out`
+- Folder Name: `nikto_out`
+- Tick: `Auto-mount`, `Make Permanent`
+
+### 14.2 Tren Ubuntu guest
+
+Kiem tra auto-mount:
+
+```bash
+ls /media
+ls /media/sf_nikto_out
+```
+
+Neu chua co, mount tay:
+
+```bash
+sudo mkdir -p /mnt/nikto_out
+sudo mount -t vboxsf nikto_out /mnt/nikto_out
+```
+
+Neu bi permission denied:
+
+```bash
+sudo usermod -aG vboxsf $USER
+```
+
+Dang xuat dang nhap lai Ubuntu, roi chay scan:
+
+```bash
+nikto -h http://<target> -Format json -output /mnt/nikto_out/nikto_export.json
+```
+
+## 15) Phuong Phap B: Google Drive (de nhat khi copy tay)
+
+### 15.1 Tren Ubuntu/VM
+
+```bash
+nikto -h http://<target> -Format json -output /tmp/nikto_export.json
+```
+
+Upload file `/tmp/nikto_export.json` len Google Drive.
+
+### 15.2 Tren Windows
+
+- Tai file tu Drive ve: `D:\CODE_WORD\Multi-Scanner Correlation Plugin\out\nikto_export.json`
+- Chay lenh phan tich o muc 13.1
+
+Luu y bao mat:
+
+- Khong upload du lieu nhay cam neu chua ma hoa.
+- Dung thu muc Drive private va xoa file sau khi da xu ly.
+
+## 16) Phuong Phap C: SCP/WinSCP qua SSH
+
+### 16.1 Tren Ubuntu/VM
+
+```bash
+nikto -h http://<target> -Format json -output /tmp/nikto_export.json
+```
+
+### 16.2 Tren Windows (scp)
+
+```powershell
+scp <user>@<vm-ip>:/tmp/nikto_export.json "D:\CODE_WORD\Multi-Scanner Correlation Plugin\out\nikto_export.json"
+```
+
+Hoac dung WinSCP de keo tha GUI.
+
+## 17) Phuong Phap D: HTTP Server Tam tren VM
+
+Tren Ubuntu/VM:
+
+```bash
+cd /tmp
+python3 -m http.server 8000
+```
+
+Tren Windows:
+
+```powershell
+Invoke-WebRequest "http://<vm-ip>:8000/nikto_export.json" -OutFile "D:\CODE_WORD\Multi-Scanner Correlation Plugin\out\nikto_export.json"
+```
+
+Sau khi tai xong, tat server tam trong VM (Ctrl+C).
+
+## 18) Checklist Nhanh Truoc Khi Bao Loi Parser
+
+1. File nam dung thu muc `out` trong project.
+2. File khong rong (size > 0).
+3. Dung duoi `.json` hoac `.txt` cua Nikto.
+4. Lenh `mscp.cli report --nikto ...` chay tu dung repo root.
+5. Neu dashboard khong hien, mo report JSON trong `out` de check noi dung da tao chua.

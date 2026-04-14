@@ -27,6 +27,18 @@ class TestNmapParser(unittest.TestCase):
         self.assertEqual(findings[0].host, "192.168.1.10")
         self.assertEqual(findings[0].port, 80)
 
+    def test_parse_nikto_native_json_shape(self) -> None:
+        findings = parse_nikto(Path("sample_data/nikto_native.json"))
+        self.assertEqual(len(findings), 2)
+        self.assertEqual(findings[0].host, "127.0.0.1")
+        self.assertEqual(findings[0].port, 80)
+        self.assertEqual(findings[0].osvdb, "3092")
+
+    def test_parse_nikto_native_json_deduplicates_exact(self) -> None:
+        findings = parse_nikto(Path("sample_data/nikto_native.json"))
+        texts = [x.item for x in findings]
+        self.assertEqual(len(texts), len(set(texts)))
+
     def test_parse_openvas_xml(self) -> None:
         findings = parse_openvas(Path("sample_data/openvas.xml"))
         cves = sorted(x.cve for x in findings)

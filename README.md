@@ -32,6 +32,19 @@ This project does not replace scanners. It ingests their outputs, correlates fin
 - OpenVAS: JSON, XML
 - Wireshark/tshark: JSON, PCAP, PCAPNG (via tshark)
 
+### Nikto Processing Notes
+
+- Input:
+  - Simple JSON shape: `{"vulnerabilities": [...]}`
+  - Native multi-host JSON-like shape: `{"hosts": [{"ip":..., "port":..., "vulnerabilities": [...]}]}`
+  - TXT/LOG output from Nikto CLI
+- Processing:
+  - Host/port/message normalization across formats
+  - Auto extraction of `OSVDB-xxxx` when present in message text
+  - Deduplication of identical findings to reduce noisy repeats
+- Output:
+  - Unified `NiktoVuln(host, port, item, osvdb)` records consumed by correlation engine
+
 ## Install
 
 ```powershell

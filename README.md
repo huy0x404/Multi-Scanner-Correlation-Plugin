@@ -11,7 +11,17 @@ This project does not replace scanners. It ingests their outputs, correlates fin
 
 ## Docs
 
-- Nikto on Windows with Defender enabled: [docs/nikto-windows-defender.md](docs/nikto-windows-defender.md)
+- **Nikto on Windows with Defender**: [docs/nikto-windows-defender.md](docs/nikto-windows-defender.md)
+- **Nikto Commands & Google Drive** (Vietnamese - detailed): [docs/nikto-commands-google-drive.md](docs/nikto-commands-google-drive.md)
+- **Nikto Commands & Google Drive** (English - concise): [docs/nikto-commands-google-drive-en.md](docs/nikto-commands-google-drive-en.md)
+  - Part 1: All Nikto scan methods
+  - Part 2: Google Drive transfer (Ubuntu→Windows)
+  - Part 3: Full end-to-end workflow
+  - Part 4-6: Troubleshooting, automation, quick reference
+- **Quick Cheatsheet for eLibraryofVKU**: [docs/nikto-elibrary-cheatsheet.md](docs/nikto-elibrary-cheatsheet.md) ⭐
+  - Ready-to-use commands for `http://10.60.68.76/eLibraryofVKU`
+  - Step-by-step workflow (Ubuntu → Google Drive → Windows)
+  - Common issues & fixes
 
 ## What You Get
 

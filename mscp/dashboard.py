@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import parse_qs, urlparse
 
+from mscp.modes import ANALYSIS_MODES, RISK_MODE_META
+
 
 HTML_TEMPLATE = """<!doctype html>
 <html>
@@ -143,6 +145,7 @@ def _render(
     notice: str | None = None,
 ) -> str:
     assets = report.get("assets", [])
+    current_risk_mode = str(params.get("risk_mode") or report.get("risk_mode", "realistic"))
     critical = sum(1 for a in assets if a.get("risk") == "CRITICAL")
     high = sum(1 for a in assets if a.get("risk") == "HIGH")
     medium = sum(1 for a in assets if a.get("risk") == "MEDIUM")
@@ -156,7 +159,14 @@ def _render(
     mode_options = []
     for m in ("auto", "1", "2", "3", "4"):
         selected = " selected" if m == current_mode else ""
-        mode_options.append(f"<option value='{m}'{selected}>{m}</option>")
+        label = ANALYSIS_MODES.get(m, {}).get("label", m)
+        mode_options.append(f"<option value='{m}'{selected}>{html.escape(m)} - {html.escape(label)}</option>")
+
+    risk_mode_options = []
+    for m in ("realistic", "capability", "balanced", "dos"):
+        selected = " selected" if m == current_risk_mode else ""
+        label = RISK_MODE_META.get(m, {}).get("label", m)
+        risk_mode_options.append(f"<option value='{m}'{selected}>{html.escape(label)}</option>")
 
     rows = []
     for a in top_assets:
@@ -192,10 +202,11 @@ def _render(
         f"<input name='openvas' placeholder='OpenVAS path' value='{html.escape(_q(params, 'openvas'))}' />"
         f"<input name='wireshark' placeholder='Wireshark path' value='{html.escape(_q(params, 'wireshark'))}' />"
         f"<input name='risk_config' placeholder='Risk config path' value='{html.escape(_q(params, 'risk_config'))}' />"
+        f"<select name='risk_mode'>{''.join(risk_mode_options)}</select>"
         f"<input name='alert_min_risk' placeholder='Alert min risk (HIGH)' value='{html.escape(_q(params, 'alert_min_risk', 'HIGH'))}' />"
         "</div>"
         f"<div class='toolbar-row'>"
-        "<label for='mode'>Mode</label>"
+        "<label for='mode'>Analysis Mode</label>"
         f"<select id='mode' name='mode'>{''.join(mode_options)}</select>"
         "<button type='submit' name='action' value='analyze'>Analyze</button>"
         "<button type='submit' name='action' value='alert' class='secondary-btn'>Send Telegram Alert</button>"
@@ -203,13 +214,23 @@ def _render(
         "</form>"
     )
 
+    analysis_mode_meta = ANALYSIS_MODES.get(str(report.get("analysis_mode", "auto")), ANALYSIS_MODES["auto"])
+    risk_mode_meta = RISK_MODE_META.get(str(report.get("risk_mode", "realistic")), RISK_MODE_META["realistic"])
+
     content = (
         f"<h1>MSCP Dashboard</h1>"
         f"{form}"
         f"<div class='card' style='margin-bottom:12px'>"
         f"<a href='/report.json?mode={html.escape(current_mode)}'>Download current report JSON</a>"
         f"</div>"
-        f"<div class='foot'>Mode: {html.escape(str(report.get('analysis_mode', 'auto')))} | Sources: {html.escape(', '.join(report.get('selected_sources', [])))}</div>"
+        f"<div class='card' style='margin-bottom:12px'>"
+        f"<div class='k'>Mode Definitions</div>"
+        f"<div><strong>Analysis</strong>: {html.escape(str(report.get('analysis_mode', 'auto')))} - {html.escape(analysis_mode_meta.get('description', ''))}</div>"
+        f"<div class='foot'>{html.escape(analysis_mode_meta.get('behavior', ''))}</div>"
+        f"<div style='margin-top:6px'><strong>Risk</strong>: {html.escape(str(report.get('risk_mode', 'realistic')))} - {html.escape(risk_mode_meta.get('description', ''))}</div>"
+        f"<div class='foot'>Best for: {html.escape(risk_mode_meta.get('best_for', ''))}</div>"
+        f"</div>"
+        f"<div class='foot'>Sources: {html.escape(', '.join(report.get('selected_sources', [])))}</div>"
         f"<div class='grid'>"
         f"<div class='card'><div class='k'>Assets</div><div class='v'>{len(assets)}</div></div>"
         f"<div class='card'><div class='k'>Critical</div><div class='v'>{critical}</div></div>"
@@ -261,6 +282,7 @@ def run_dashboard(
                 "openvas": qs.get("openvas", [defaults.get("openvas", "")])[0],
                 "wireshark": qs.get("wireshark", [defaults.get("wireshark", "")])[0],
                 "risk_config": qs.get("risk_config", [defaults.get("risk_config", "")])[0],
+                "risk_mode": qs.get("risk_mode", [defaults.get("risk_mode", "realistic")])[0],
                 "alert_min_risk": qs.get("alert_min_risk", [defaults.get("alert_min_risk", "HIGH")])[0],
             }
             action = qs.get("action", ["analyze"])[0]

@@ -4,25 +4,87 @@ from typing import Dict, List
 
 from mscp.models import CorrelatedAsset
 
-DEFAULT_WEIGHTS = {
-    "open_port": 1,
-    "web_vuln": 3,
-    "cve": 5,
-    "exploit": 10,
-    "traffic_signal": 2,
-    "traffic_anomaly": 5,
-    "dos_indicator": 10,
+
+RISK_PROFILES: dict[str, dict[str, int]] = {
+    # Practical default profile for real-world mixed scanner signals.
+    "realistic": {
+        "open_port": 1,
+        "web_vuln": 4,
+        "cve": 6,
+        "exploit": 9,
+        "traffic_signal": 2,
+        "traffic_anomaly": 4,
+        "dos_indicator": 7,
+    },
+    # Legacy profile kept for backward compatibility.
+    "balanced": {
+        "open_port": 1,
+        "web_vuln": 3,
+        "cve": 5,
+        "exploit": 10,
+        "traffic_signal": 2,
+        "traffic_anomaly": 5,
+        "dos_indicator": 10,
+    },
+    # Capability-based profile: each scanner weight follows its practical detection strength.
+    "capability": {
+        "open_port": 1,
+        "web_vuln": 4,
+        "cve": 7,
+        "exploit": 12,
+        "traffic_signal": 2,
+        "traffic_anomaly": 6,
+        "dos_indicator": 12,
+    },
+    # Traffic/DoS-focused operations mode.
+    "dos": {
+        "open_port": 1,
+        "web_vuln": 3,
+        "cve": 5,
+        "exploit": 10,
+        "traffic_signal": 3,
+        "traffic_anomaly": 8,
+        "dos_indicator": 14,
+    },
 }
+
+DEFAULT_RISK_MODE = "realistic"
+DEFAULT_WEIGHTS = dict(RISK_PROFILES[DEFAULT_RISK_MODE])
+
+
+def resolve_weights_for_mode(mode: str | None) -> Dict[str, int]:
+    selected = str(mode or DEFAULT_RISK_MODE).strip().lower()
+    if selected not in RISK_PROFILES:
+        selected = DEFAULT_RISK_MODE
+    return dict(RISK_PROFILES[selected])
 
 
 def classify(score: int) -> str:
-    if score >= 18:
+    if score >= 20:
         return "CRITICAL"
-    if score >= 10:
+    if score >= 12:
         return "HIGH"
-    if score >= 5:
+    if score >= 6:
         return "MEDIUM"
     return "LOW"
+
+
+def _interaction_bonus(asset: CorrelatedAsset) -> int:
+    ev = asset.evidence
+    bonus = 0
+
+    if "open_port" in ev and "cve" in ev:
+        bonus += 2
+    if "cve" in ev and "exploit" in ev:
+        bonus += 4
+    if "web_vuln" in ev and "open_port" in ev:
+        bonus += 1
+    if "traffic_anomaly" in ev and ("open_port" in ev or "web_vuln" in ev or "cve" in ev):
+        bonus += 2
+    if "dos_indicator" in ev and "traffic_anomaly" in ev:
+        bonus += 3
+
+    return bonus
 
 
 def explain(asset: CorrelatedAsset) -> str:
@@ -61,6 +123,11 @@ def score_assets(assets: List[CorrelatedAsset], weights: Dict[str, int] | None =
             val = int(active_weights.get(ev, 0))
             score += val
             details[ev] = val
+
+        bonus = _interaction_bonus(asset)
+        if bonus > 0:
+            score += bonus
+            details["interaction_bonus"] = bonus
 
         asset.score = score
         asset.score_details = dict(sorted(details.items()))

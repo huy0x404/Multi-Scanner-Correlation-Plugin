@@ -39,6 +39,14 @@ class TestNmapParser(unittest.TestCase):
         texts = [x.item for x in findings]
         self.assertEqual(len(texts), len(set(texts)))
 
+    def test_parse_nikto_xml_concatenated_blocks(self) -> None:
+        findings = parse_nikto(Path("sample_data/nikto.xml"))
+        self.assertEqual(len(findings), 2)
+        self.assertEqual(findings[0].host, "10.10.10.10")
+        self.assertEqual(findings[0].port, 8080)
+        self.assertEqual(findings[0].osvdb, "3092")
+        self.assertIsNone(findings[1].osvdb)
+
     def test_parse_openvas_xml(self) -> None:
         findings = parse_openvas(Path("sample_data/openvas.xml"))
         cves = sorted(x.cve for x in findings)

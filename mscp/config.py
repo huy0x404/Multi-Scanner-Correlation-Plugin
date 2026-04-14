@@ -4,11 +4,11 @@ import json
 from pathlib import Path
 from typing import Dict
 
-from mscp.engine.risk import DEFAULT_WEIGHTS
+from mscp.engine.risk import DEFAULT_RISK_MODE, resolve_weights_for_mode
 
 
-def _normalize_weights(raw: dict) -> Dict[str, int]:
-    merged = dict(DEFAULT_WEIGHTS)
+def _normalize_weights(raw: dict, base: Dict[str, int]) -> Dict[str, int]:
+    merged = dict(base)
     for key, value in raw.items():
         try:
             merged[str(key)] = int(value)
@@ -17,9 +17,10 @@ def _normalize_weights(raw: dict) -> Dict[str, int]:
     return merged
 
 
-def load_weights(path: str | None) -> Dict[str, int]:
+def load_weights(path: str | None, mode: str | None = None) -> Dict[str, int]:
+    base = resolve_weights_for_mode(mode)
     if not path:
-        return dict(DEFAULT_WEIGHTS)
+        return base
 
     p = Path(path)
     if not p.exists():
@@ -42,8 +43,12 @@ def load_weights(path: str | None) -> Dict[str, int]:
     if not isinstance(payload, dict):
         raise ValueError("Risk config root must be an object")
 
+    cfg_mode = payload.get("mode") if isinstance(payload, dict) else None
+    effective_mode = str(cfg_mode).strip().lower() if cfg_mode else (mode or DEFAULT_RISK_MODE)
+    base = resolve_weights_for_mode(effective_mode)
+
     weights_obj = payload.get("weights", payload)
     if not isinstance(weights_obj, dict):
         raise ValueError("Risk config must contain an object field 'weights' or be a key/value object")
 
-    return _normalize_weights(weights_obj)
+    return _normalize_weights(weights_obj, base=base)

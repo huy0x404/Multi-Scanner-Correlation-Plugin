@@ -16,7 +16,8 @@ class TestEngine(unittest.TestCase):
         scored = score_assets(assets)
 
         self.assertEqual(len(scored), 1)
-        self.assertEqual(scored[0].score, 21)
+        self.assertEqual(scored[0].score, 29)
+        self.assertEqual(scored[0].score_details["interaction_bonus"], 7)
         self.assertEqual(scored[0].risk, "CRITICAL")
 
     def test_traffic_findings_are_aggregated(self) -> None:

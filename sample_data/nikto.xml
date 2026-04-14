@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+<niktoscan version="2.1.5" nxmlversion="1.2">
+  <scandetails targetip="10.10.10.10" targethostname="example.local" targetport="8080">
+    <item id="001" osvdbid="3092" method="GET">
+      <description><![CDATA[/admin/: This might be interesting...]]></description>
+      <uri><![CDATA[/admin/]]></uri>
+    </item>
+    <item id="002" osvdbid="0" method="TRACE">
+      <description><![CDATA[HTTP TRACE method is active]]></description>
+      <uri><![CDATA[/]]></uri>
+    </item>
+  </scandetails>
+</niktoscan>
+<niktoscan version="2.1.5" nxmlversion="1.2">
+  <scandetails targetip="10.10.10.10" targethostname="example.local" targetport="8080">
+    <item id="001" osvdbid="3092" method="GET">
+      <description><![CDATA[/admin/: This might be interesting...]]></description>
+      <uri><![CDATA[/admin/]]></uri>
+    </item>
+  </scandetails>
+</niktoscan>

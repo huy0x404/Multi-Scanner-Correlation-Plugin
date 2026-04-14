@@ -28,6 +28,7 @@ This project does not replace scanners. It ingests their outputs, correlates fin
 - Unified asset/finding model across tools
 - Correlation engine (port + service + vuln + CVE)
 - Deterministic risk scoring (no AI)
+- Practical risk modes (`realistic` default, plus optional profiles)
 - Diff mode to compare two scan snapshots
 - Smart alerting for high risk findings
 - Scheduler mode that only alerts when results changed
@@ -38,7 +39,7 @@ This project does not replace scanners. It ingests their outputs, correlates fin
 ## Supported Input Formats
 
 - Nmap: XML
-- Nikto: JSON, TXT
+- Nikto: XML, JSON, TXT
 - OpenVAS: JSON, XML
 - Wireshark/tshark: JSON, PCAP, PCAPNG (via tshark)
 
@@ -89,9 +90,10 @@ Generate a report:
 ```powershell
 py -3 -m mscp.cli report \
   --nmap .\sample_data\nmap.xml \
-  --nikto .\sample_data\nikto.txt \
+  --nikto .\sample_data\nikto.xml \
   --openvas .\sample_data\openvas.xml \
   --wireshark .\sample_data\wireshark.json \
+  --risk-mode realistic \
   --risk-config .\config\risk_weights.json \
   --out .\out\report.json
 ```
@@ -103,6 +105,36 @@ Analysis modes (for practical workflows):
 - `--analysis-mode 2`: analyze first 2 sources
 - `--analysis-mode 3`: analyze first 3 sources
 - `--analysis-mode 4`: analyze all 4 sources
+
+Risk modes (weighting profiles by scanner function):
+
+- `--risk-mode realistic`: default, practical mixed-signal scoring for real operations
+- `--risk-mode capability`: stronger weighting by scanner detection strength
+- `--risk-mode balanced`: legacy profile (backward-compatible)
+- `--risk-mode dos`: traffic/DoS-focused profile
+
+When you use `--analysis-mode 1/2/3/4`, source selection is count-based from parsed findings
+(more informative sources are selected first), not hardcoded priority by scanner name.
+
+### Mode Definitions (Backend + Dashboard)
+
+Analysis modes:
+
+- `auto`: use all provided scanner sources.
+- `1`: use top 1 source by parsed finding count.
+- `2`: use top 2 sources by parsed finding count.
+- `3`: use top 3 sources by parsed finding count.
+- `4`: use top 4 sources by parsed finding count.
+
+Risk modes:
+
+- `realistic` (default): practical baseline for mixed real-world signals.
+- `capability`: stronger emphasis on scanner-native strengths.
+- `balanced`: legacy profile for backward-compatible comparison.
+- `dos`: traffic anomaly and DoS-focused profile.
+
+Dashboard now shows mode definitions directly in UI and writes mode metadata into report JSON fields
+(`analysis_mode_meta`, `risk_mode_meta`) for auditability.
 
 Examples:
 
@@ -253,6 +285,12 @@ Nmap XML:
 
 ```powershell
 nmap -sV -oX .\data\nmap.xml <target>
+```
+
+Nikto XML:
+
+```powershell
+nikto -h <target> -Format xml -o .\data\nikto.xml
 ```
 
 Nikto TXT:

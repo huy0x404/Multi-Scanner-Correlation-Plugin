@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any, List
 
@@ -19,6 +20,7 @@ _META_PREFIXES = (
     "+ End Time:",
     "+ Server:",
 )
+_NIKTOSCAN_BLOCK_RE = re.compile(r"<niktoscan\b[\s\S]*?</niktoscan>", re.IGNORECASE)
 
 
 def _to_int(value: Any, default: int = 80) -> int:
@@ -63,7 +65,9 @@ def _append_nikto_vuln(vulns: List[NiktoVuln], seen: set[tuple[str, int, str, st
     detail = _normalize_message(item)
 
     osvdb_raw = item.get("osvdb")
-    osvdb = str(osvdb_raw).strip() if osvdb_raw else None
+    osvdb = str(osvdb_raw).strip() if osvdb_raw is not None else None
+    if osvdb in {"", "0", "None", "none"}:
+        osvdb = None
     if osvdb is None:
         osvdb = _extract_osvdb(detail)
 
@@ -186,8 +190,64 @@ def parse_nikto_txt(path: str | Path) -> List[NiktoVuln]:
     return vulns
 
 
+def _iter_nikto_xml_roots(raw: str) -> List[ET.Element]:
+    roots: List[ET.Element] = []
+
+    blocks = _NIKTOSCAN_BLOCK_RE.findall(raw)
+    if blocks:
+        for block in blocks:
+            try:
+                roots.append(ET.fromstring(block))
+            except ET.ParseError:
+                continue
+        return roots
+
+    try:
+        root = ET.fromstring(raw)
+    except ET.ParseError:
+        return []
+
+    return [root]
+
+
+def parse_nikto_xml(path: str | Path) -> List[NiktoVuln]:
+    with open(path, "r", encoding="utf-8", errors="ignore") as f:
+        raw = f.read()
+
+    vulns: List[NiktoVuln] = []
+    seen: set[tuple[str, int, str, str | None]] = set()
+
+    for root in _iter_nikto_xml_roots(raw):
+        for details in root.findall(".//scandetails"):
+            host = details.attrib.get("targetip") or details.attrib.get("targethostname") or "unknown"
+            port = _to_int(details.attrib.get("targetport"), default=80)
+
+            for item in details.findall("item"):
+                description = (item.findtext("description") or "").strip()
+                uri = (item.findtext("uri") or "").strip()
+                method = str(item.attrib.get("method") or "").strip().upper()
+                osvdb = str(item.attrib.get("osvdbid") or "").strip()
+
+                _append_nikto_vuln(
+                    vulns,
+                    seen,
+                    {
+                        "host": host,
+                        "port": port,
+                        "msg": description,
+                        "uri": uri,
+                        "method": method,
+                        "osvdb": osvdb,
+                    },
+                )
+
+    return vulns
+
+
 def parse_nikto(path: str | Path) -> List[NiktoVuln]:
     suffix = Path(path).suffix.lower()
     if suffix in {".txt", ".log"}:
         return parse_nikto_txt(path)
+    if suffix == ".xml":
+        return parse_nikto_xml(path)
     return parse_nikto_json(path)

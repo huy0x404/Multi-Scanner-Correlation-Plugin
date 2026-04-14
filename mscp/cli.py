@@ -15,8 +15,9 @@ from mscp.config import load_weights
 from mscp.dashboard import run_dashboard
 from mscp.engine.correlation import correlate
 from mscp.engine.diff import diff_reports
-from mscp.engine.risk import score_assets
+from mscp.engine.risk import RISK_PROFILES, score_assets
 from mscp.env_config import get_telegram_config
+from mscp.modes import ANALYSIS_MODES, RISK_MODE_META
 from mscp.plugins import PluginRegistry
 
 
@@ -95,7 +96,7 @@ def _has_input_sources(args: argparse.Namespace) -> bool:
     return any([args.nmap, args.nikto, args.openvas, args.wireshark])
 
 
-def _select_sources(args: argparse.Namespace) -> dict[str, str]:
+def _select_sources(args: argparse.Namespace, source_scores: dict[str, int] | None = None) -> dict[str, str]:
     provided = {k: getattr(args, k) for k in SOURCE_ORDER if getattr(args, k)}
     mode = str(getattr(args, "analysis_mode", "auto")).lower()
 
@@ -115,15 +116,13 @@ def _select_sources(args: argparse.Namespace) -> dict[str, str]:
             f"analysis_mode={expected} requires at least {expected} input sources, but got {len(provided)}"
         )
 
-    selected: dict[str, str] = {}
-    for key in SOURCE_ORDER:
-        val = provided.get(key)
-        if val:
-            selected[key] = val
-        if len(selected) == expected:
-            break
+    # When source_scores is provided, select by data richness (count-based) instead of fixed scanner order.
+    if source_scores:
+        ranked = sorted(provided.keys(), key=lambda k: (-int(source_scores.get(k, 0)), k))
+    else:
+        ranked = [k for k in SOURCE_ORDER if k in provided]
 
-    return selected
+    return {k: provided[k] for k in ranked[:expected]}
 
 
 def _assets_fingerprint(report: dict) -> str:
@@ -138,15 +137,25 @@ def _has_any_diff(diff_payload: dict | None) -> bool:
 
 def build_report(args: argparse.Namespace) -> dict:
     registry = PluginRegistry.default()
-    weights = load_weights(getattr(args, "risk_config", None))
-    selected_sources = _select_sources(args)
+    weights = load_weights(getattr(args, "risk_config", None), mode=getattr(args, "risk_mode", None))
+    provided_sources = {k: getattr(args, k) for k in SOURCE_ORDER if getattr(args, k)}
 
-    nmap_data = registry.run("nmap", selected_sources["nmap"]) if "nmap" in selected_sources else []
-    nikto_data = registry.run("nikto", selected_sources["nikto"]) if "nikto" in selected_sources else []
-    openvas_data = registry.run("openvas", selected_sources["openvas"]) if "openvas" in selected_sources else []
-    wireshark_data = (
-        registry.run("wireshark", selected_sources["wireshark"]) if "wireshark" in selected_sources else []
-    )
+    parsed_data: dict[str, list] = {}
+    source_scores: dict[str, int] = {}
+    for name, src_path in provided_sources.items():
+        data = registry.run(name, src_path)
+        parsed_data[name] = data
+        try:
+            source_scores[name] = len(data)
+        except TypeError:
+            source_scores[name] = 1
+
+    selected_sources = _select_sources(args, source_scores=source_scores)
+
+    nmap_data = parsed_data.get("nmap", []) if "nmap" in selected_sources else []
+    nikto_data = parsed_data.get("nikto", []) if "nikto" in selected_sources else []
+    openvas_data = parsed_data.get("openvas", []) if "openvas" in selected_sources else []
+    wireshark_data = parsed_data.get("wireshark", []) if "wireshark" in selected_sources else []
 
     assets = correlate(
         nmap=nmap_data,
@@ -160,7 +169,17 @@ def build_report(args: argparse.Namespace) -> dict:
     report = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "analysis_mode": getattr(args, "analysis_mode", "auto"),
+        "risk_mode": getattr(args, "risk_mode", "realistic"),
+        "analysis_mode_meta": ANALYSIS_MODES.get(
+            getattr(args, "analysis_mode", "auto"),
+            ANALYSIS_MODES["auto"],
+        ),
+        "risk_mode_meta": RISK_MODE_META.get(
+            getattr(args, "risk_mode", "realistic"),
+            RISK_MODE_META["realistic"],
+        ),
         "selected_sources": sorted(selected_sources.keys()),
+        "source_scores": source_scores,
         "assets": [x.to_dict() for x in enriched],
     }
     report["analysis"] = build_analysis_insights(report)
@@ -278,6 +297,7 @@ def handle_dashboard(args: argparse.Namespace) -> int:
             baseline=None,
             out=None,
             risk_config=params.get("risk_config") or args.risk_config,
+            risk_mode=params.get("risk_mode") or args.risk_mode,
             telegram_bot_token=None,
             telegram_chat_id=None,
             alert_min_risk=(params.get("alert_min_risk") or args.alert_min_risk),
@@ -303,6 +323,7 @@ def handle_dashboard(args: argparse.Namespace) -> int:
         "openvas": args.openvas or "",
         "wireshark": args.wireshark or "",
         "risk_config": args.risk_config or "",
+        "risk_mode": args.risk_mode,
         "alert_min_risk": args.alert_min_risk,
     }
 
@@ -334,7 +355,7 @@ def _run_interactive() -> int:
     print("Leave empty if a scanner file is not available.")
 
     nmap = _prompt_value("Nmap XML path")
-    nikto = _prompt_value("Nikto JSON/TXT path")
+    nikto = _prompt_value("Nikto XML/JSON/TXT path")
     openvas = _prompt_value("OpenVAS JSON/XML path")
     wireshark = _prompt_value("Wireshark JSON/PCAP/PCAPNG path")
     baseline = _prompt_value("Baseline report JSON path")
@@ -346,6 +367,15 @@ def _run_interactive() -> int:
     min_risk = (_prompt_value("Alert min risk (LOW|MEDIUM|HIGH|CRITICAL)", default="HIGH") or "HIGH").upper()
     if min_risk not in {"LOW", "MEDIUM", "HIGH", "CRITICAL"}:
         min_risk = "HIGH"
+    risk_mode = (
+        _prompt_value(
+            f"Risk mode ({'|'.join(sorted(RISK_PROFILES.keys()))})",
+            default="realistic",
+        )
+        or "realistic"
+    ).lower()
+    if risk_mode not in RISK_PROFILES:
+        risk_mode = "realistic"
 
     args = argparse.Namespace(
         command="report",
@@ -360,6 +390,7 @@ def _run_interactive() -> int:
         telegram_chat_id=chat_id,
         dotenv=".env",
         alert_min_risk=min_risk,
+        risk_mode=risk_mode,
         handler=handle_report,
     )
     return handle_report(args)
@@ -372,12 +403,18 @@ def make_parser() -> argparse.ArgumentParser:
 
     report_cmd = sub.add_parser("report", help="Build correlated risk report")
     report_cmd.add_argument("--nmap", help="Path to Nmap XML report")
-    report_cmd.add_argument("--nikto", help="Path to Nikto JSON or TXT report")
+    report_cmd.add_argument("--nikto", help="Path to Nikto XML, JSON or TXT report")
     report_cmd.add_argument("--openvas", help="Path to OpenVAS JSON or XML report")
     report_cmd.add_argument("--wireshark", help="Path to tshark/Wireshark JSON report")
     report_cmd.add_argument("--baseline", help="Old report JSON for diff mode")
     report_cmd.add_argument("--out", help="Output JSON path")
     report_cmd.add_argument("--risk-config", help="Risk config file (.json/.yaml)")
+    report_cmd.add_argument(
+        "--risk-mode",
+        choices=sorted(RISK_PROFILES.keys()),
+        default="realistic",
+        help="Risk weighting mode by scanner capability",
+    )
     report_cmd.add_argument(
         "--analysis-mode",
         choices=["auto", "1", "2", "3", "4"],
@@ -399,11 +436,17 @@ def make_parser() -> argparse.ArgumentParser:
 
     schedule_cmd = sub.add_parser("schedule", help="Run periodic scans and alert only on changes")
     schedule_cmd.add_argument("--nmap", help="Path to Nmap XML report")
-    schedule_cmd.add_argument("--nikto", help="Path to Nikto JSON or TXT report")
+    schedule_cmd.add_argument("--nikto", help="Path to Nikto XML, JSON or TXT report")
     schedule_cmd.add_argument("--openvas", help="Path to OpenVAS JSON or XML report")
     schedule_cmd.add_argument("--wireshark", help="Path to tshark/Wireshark JSON report")
     schedule_cmd.add_argument("--out", help="Output JSON path")
     schedule_cmd.add_argument("--risk-config", help="Risk config file (.json/.yaml)")
+    schedule_cmd.add_argument(
+        "--risk-mode",
+        choices=sorted(RISK_PROFILES.keys()),
+        default="realistic",
+        help="Risk weighting mode by scanner capability",
+    )
     schedule_cmd.add_argument(
         "--analysis-mode",
         choices=["auto", "1", "2", "3", "4"],
@@ -448,10 +491,16 @@ def make_parser() -> argparse.ArgumentParser:
     dashboard_cmd.add_argument("--port", type=int, default=8787, help="Dashboard bind port")
     dashboard_cmd.add_argument("--no-browser", action="store_true", help="Do not auto-open browser")
     dashboard_cmd.add_argument("--nmap", help="Path to Nmap XML report")
-    dashboard_cmd.add_argument("--nikto", help="Path to Nikto JSON or TXT report")
+    dashboard_cmd.add_argument("--nikto", help="Path to Nikto XML, JSON or TXT report")
     dashboard_cmd.add_argument("--openvas", help="Path to OpenVAS JSON or XML report")
     dashboard_cmd.add_argument("--wireshark", help="Path to tshark/Wireshark JSON/PCAP/PCAPNG report")
     dashboard_cmd.add_argument("--risk-config", help="Risk config file (.json/.yaml)")
+    dashboard_cmd.add_argument(
+        "--risk-mode",
+        choices=sorted(RISK_PROFILES.keys()),
+        default="realistic",
+        help="Risk weighting mode by scanner capability",
+    )
     dashboard_cmd.add_argument("--dotenv", default=".env", help="Path to .env for Telegram credentials")
     dashboard_cmd.add_argument(
         "--alert-min-risk",

@@ -1,5 +1,8 @@
-﻿// Run dashboard without report
+﻿# Run dashboard without report
 & ".\.venv\Scripts\python.exe" -m mscp.cli dashboard --dotenv ".\.env" --host 127.0.0.1 --port 8787 --no-browser
 
-// Run dashboard with report
-& ".\.venv\Scripts\python.exe" -m mscp.cli dashboard --report ".\out\report.json" --dotenv ".\.env" --host 127.0.0.1 --port 8787 --no-browser
+# Run dashboard with report output file
+& ".\.venv\Scripts\python.exe" -m mscp.cli dashboard --report ".\out\report-interactive.json" --dotenv ".\.env" --host 127.0.0.1 --port 8787 --no-browser
+
+# Quick run (same as current app run)
+& ".\.venv\Scripts\python.exe" -m mscp.cli dashboard --dotenv ".\.env" --host 127.0.0.1 --port 8787 --no-browser

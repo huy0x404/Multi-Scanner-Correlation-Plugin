@@ -16,8 +16,8 @@ from mscp.dashboard import run_dashboard
 from mscp.engine.correlation import correlate
 from mscp.engine.diff import diff_reports
 from mscp.engine.risk import RISK_PROFILES, score_assets
-from mscp.env_config import get_telegram_config
-from mscp.modes import ANALYSIS_MODES, RISK_MODE_META
+from mscp.env_config import get_dashboard_settings, get_telegram_config
+from mscp.modes import RISK_MODE_META
 from mscp.plugins import PluginRegistry
 
 
@@ -97,32 +97,9 @@ def _has_input_sources(args: argparse.Namespace) -> bool:
 
 
 def _select_sources(args: argparse.Namespace, source_scores: dict[str, int] | None = None) -> dict[str, str]:
+    # Simplified: include all provided sources for per-source analysis.
     provided = {k: getattr(args, k) for k in SOURCE_ORDER if getattr(args, k)}
-    mode = str(getattr(args, "analysis_mode", "auto")).lower()
-
-    if mode == "auto":
-        return provided
-
-    try:
-        expected = int(mode)
-    except ValueError as exc:
-        raise ValueError("analysis_mode must be one of: auto, 1, 2, 3, 4") from exc
-
-    if expected < 1 or expected > 4:
-        raise ValueError("analysis_mode must be one of: auto, 1, 2, 3, 4")
-
-    if len(provided) < expected:
-        raise ValueError(
-            f"analysis_mode={expected} requires at least {expected} input sources, but got {len(provided)}"
-        )
-
-    # When source_scores is provided, select by data richness (count-based) instead of fixed scanner order.
-    if source_scores:
-        ranked = sorted(provided.keys(), key=lambda k: (-int(source_scores.get(k, 0)), k))
-    else:
-        ranked = [k for k in SOURCE_ORDER if k in provided]
-
-    return {k: provided[k] for k in ranked[:expected]}
+    return provided
 
 
 def _assets_fingerprint(report: dict) -> str:
@@ -168,12 +145,7 @@ def build_report(args: argparse.Namespace) -> dict:
 
     report = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "analysis_mode": getattr(args, "analysis_mode", "auto"),
         "risk_mode": getattr(args, "risk_mode", "realistic"),
-        "analysis_mode_meta": ANALYSIS_MODES.get(
-            getattr(args, "analysis_mode", "auto"),
-            ANALYSIS_MODES["auto"],
-        ),
         "risk_mode_meta": RISK_MODE_META.get(
             getattr(args, "risk_mode", "realistic"),
             RISK_MODE_META["realistic"],
@@ -288,7 +260,9 @@ def handle_schedule(args: argparse.Namespace) -> int:
 
 
 def handle_dashboard(args: argparse.Namespace) -> int:
-    def _loader(mode: str, params: dict[str, str]) -> dict:
+    env_settings = get_dashboard_settings(args.dotenv)
+
+    def _loader(_mode: str, params: dict[str, str]) -> dict:
         tmp_args = argparse.Namespace(
             nmap=params.get("nmap") or args.nmap,
             nikto=params.get("nikto") or args.nikto,
@@ -297,11 +271,10 @@ def handle_dashboard(args: argparse.Namespace) -> int:
             baseline=None,
             out=None,
             risk_config=params.get("risk_config") or args.risk_config,
-            risk_mode=params.get("risk_mode") or args.risk_mode,
+            risk_mode=params.get("risk_mode") or str(env_settings.get("risk_mode") or args.risk_mode),
             telegram_bot_token=None,
             telegram_chat_id=None,
             alert_min_risk=(params.get("alert_min_risk") or args.alert_min_risk),
-            analysis_mode=mode,
             dotenv=args.dotenv,
         )
         if not _has_input_sources(tmp_args):
@@ -323,8 +296,10 @@ def handle_dashboard(args: argparse.Namespace) -> int:
         "openvas": args.openvas or "",
         "wireshark": args.wireshark or "",
         "risk_config": args.risk_config or "",
-        "risk_mode": args.risk_mode,
+        "risk_mode": str(env_settings.get("risk_mode") or args.risk_mode),
         "alert_min_risk": args.alert_min_risk,
+        "lang": str(env_settings.get("lang") or "en"),
+        "settings": env_settings,
     }
 
     return run_dashboard(
@@ -335,7 +310,7 @@ def handle_dashboard(args: argparse.Namespace) -> int:
         report_loader=_loader,
         alert_sender=_alert_sender,
         initial_params=initial_params,
-        default_mode=args.analysis_mode,
+        default_mode="auto",
     )
 
 
@@ -415,13 +390,6 @@ def make_parser() -> argparse.ArgumentParser:
         default="realistic",
         help="Risk weighting mode by scanner capability",
     )
-    report_cmd.add_argument(
-        "--analysis-mode",
-        choices=["auto", "1", "2", "3", "4"],
-        default="auto",
-        help="Use all provided sources (auto) or force analyzing first N sources by priority",
-    )
-
     report_cmd.add_argument("--telegram-bot-token", help="Telegram bot token")
     report_cmd.add_argument("--telegram-chat-id", help="Telegram chat id")
     report_cmd.add_argument("--dotenv", default=".env", help="Path to .env for Telegram credentials")
@@ -447,13 +415,6 @@ def make_parser() -> argparse.ArgumentParser:
         default="realistic",
         help="Risk weighting mode by scanner capability",
     )
-    schedule_cmd.add_argument(
-        "--analysis-mode",
-        choices=["auto", "1", "2", "3", "4"],
-        default="auto",
-        help="Use all provided sources (auto) or force analyzing first N sources by priority",
-    )
-
     schedule_cmd.add_argument("--telegram-bot-token", help="Telegram bot token")
     schedule_cmd.add_argument("--telegram-chat-id", help="Telegram chat id")
     schedule_cmd.add_argument("--dotenv", default=".env", help="Path to .env for Telegram credentials")
@@ -507,12 +468,6 @@ def make_parser() -> argparse.ArgumentParser:
         choices=["LOW", "MEDIUM", "HIGH", "CRITICAL"],
         default="HIGH",
         help="Minimum risk level for dashboard Send Alert action",
-    )
-    dashboard_cmd.add_argument(
-        "--analysis-mode",
-        choices=["auto", "1", "2", "3", "4"],
-        default="auto",
-        help="Default mode for dashboard refresh",
     )
     dashboard_cmd.set_defaults(handler=handle_dashboard)
 

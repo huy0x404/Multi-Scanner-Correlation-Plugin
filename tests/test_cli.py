@@ -78,7 +78,8 @@ class TestCliAlertThreshold(unittest.TestCase):
             analysis_mode="2",
         )
         selected = _select_sources(args)
-        self.assertEqual(list(selected.keys()), ["nmap", "nikto"])
+        # Analysis mode removed; all provided sources should be selected
+        self.assertEqual(set(selected.keys()), {"nmap", "nikto", "openvas"})
 
     def test_select_sources_mode_2_count_based(self) -> None:
         args = Namespace(
@@ -92,7 +93,8 @@ class TestCliAlertThreshold(unittest.TestCase):
             args,
             source_scores={"nmap": 1, "nikto": 6, "openvas": 2, "wireshark": 4},
         )
-        self.assertEqual(list(selected.keys()), ["nikto", "wireshark"])
+        # Analysis mode removed; all provided sources should be selected
+        self.assertEqual(set(selected.keys()), {"nmap", "nikto", "openvas", "wireshark"})
 
 
 if __name__ == "__main__":

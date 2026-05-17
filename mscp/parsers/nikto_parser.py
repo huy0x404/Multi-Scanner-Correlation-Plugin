@@ -245,9 +245,39 @@ def parse_nikto_xml(path: str | Path) -> List[NiktoVuln]:
 
 
 def parse_nikto(path: str | Path) -> List[NiktoVuln]:
-    suffix = Path(path).suffix.lower()
-    if suffix in {".txt", ".log"}:
-        return parse_nikto_txt(path)
-    if suffix == ".xml":
+    # Choose parser based on content when suffix may be missing (uploaded temp files).
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            raw = f.read(8192)
+    except OSError:
+        # fall back to suffix-based decision if file unreadable here
+        suffix = Path(path).suffix.lower()
+        if suffix in {".txt", ".log"}:
+            return parse_nikto_txt(path)
+        if suffix == ".xml":
+            return parse_nikto_xml(path)
+        return parse_nikto_json(path)
+
+    head = raw.lstrip()
+    low = raw.lower()
+
+    # XML-ish content (common Nikto XML formats contain <niktoscan> or <scandetails>)
+    if head.startswith("<") and ("<niktoscan" in low or "<scandetails" in low or head.startswith("<?xml")):
         return parse_nikto_xml(path)
-    return parse_nikto_json(path)
+
+    # JSON-ish content
+    if head.startswith("{") or head.startswith("["):
+        return parse_nikto_json(path)
+
+    # Plain-text Nikto output often uses leading "+" metadata lines
+    if "+ target" in low or raw.count("+ ") > 3:
+        return parse_nikto_txt(path)
+
+    # Best-effort fallbacks
+    try:
+        return parse_nikto_xml(path)
+    except Exception:
+        try:
+            return parse_nikto_json(path)
+        except Exception:
+            return parse_nikto_txt(path)

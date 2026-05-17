@@ -69,13 +69,13 @@ def build_analysis_insights(report: dict[str, Any]) -> dict[str, Any]:
 
     recommendations: list[str] = []
     if risk_counts["CRITICAL"] > 0:
-        recommendations.append("Patch ngay cac asset CRITICAL va kiem tra exposure tren Internet.")
+        recommendations.append("Patch CRITICAL assets immediately and review internet exposure.")
     if len(exposed_and_traffic) > 0:
-        recommendations.append("Uu tien dieu tra asset vua open port vua co traffic bat thuong.")
+        recommendations.append("Prioritize assets that have both open ports and abnormal traffic.")
     if len(public_hosts) > 0:
-        recommendations.append("Raf soat ket noi ra ngoai doi voi host public va gioi han egress neu can.")
+        recommendations.append("Review outbound connectivity for public hosts and restrict egress if required.")
     if not recommendations:
-        recommendations.append("Khong co chi bao nghiem trong. Tiep tuc theo doi diff theo chu ky.")
+        recommendations.append("No critical indicators found. Continue periodic diff monitoring.")
 
     return {
         "risk_counts": risk_counts,

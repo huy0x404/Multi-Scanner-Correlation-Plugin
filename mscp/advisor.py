@@ -10,22 +10,22 @@ def suggest_actions(asset: CorrelatedAsset) -> List[str]:
     findings_text = " ".join(asset.findings).lower()
 
     if "sql" in findings_text and "inject" in findings_text:
-        suggestions.append("Server nay co the bi SQL Injection. Kiem tra input validation va prepared statements.")
+        suggestions.append("Potential SQL Injection. Validate inputs and enforce prepared statements.")
 
     if "xss" in findings_text:
-        suggestions.append("Co dau hieu XSS. Bat dau voi output encoding va CSP.")
+        suggestions.append("Possible XSS behavior detected. Start with output encoding and a strict CSP.")
 
     if "cve" in asset.evidence and "exploit" in asset.evidence:
-        suggestions.append("Co CVE kem exploit hint. Uu tien patch khan cap va giam exposure.")
+        suggestions.append("CVE with exploit hint detected. Prioritize emergency patching and reduce exposure.")
 
     if asset.port in {22, 3389} and "open_port" in asset.evidence:
-        suggestions.append("Cong quan tri dang mo. Kiem tra allowlist IP va MFA.")
+        suggestions.append("Administrative port is exposed. Enforce IP allowlist and MFA.")
 
     if "traffic_signal" in asset.evidence and asset.risk in {"HIGH", "CRITICAL"}:
-        suggestions.append("Luu luong bat thuong ket hop risk cao. Nen bat packet capture theo cua so thoi gian ngan de dieu tra.")
+        suggestions.append("High-risk traffic anomaly detected. Capture short-window packets for investigation.")
 
     if not suggestions:
-        suggestions.append("Chua thay chi bao tan cong ro rang. Tiep tuc theo doi diff o lan scan tiep theo.")
+        suggestions.append("No clear attack indicator yet. Keep monitoring diffs in the next scan cycle.")
 
     return suggestions
 

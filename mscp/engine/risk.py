@@ -135,3 +135,17 @@ def score_assets(assets: List[CorrelatedAsset], weights: Dict[str, int] | None =
         asset.reason = explain(asset)
 
     return assets
+
+
+def normalize_assets_to_100(assets: List[CorrelatedAsset]) -> List[CorrelatedAsset]:
+    """Scale asset.score linearly so the highest becomes 100. Returns same list."""
+    if not assets:
+        return assets
+    max_raw = max((a.score for a in assets), default=0)
+    if max_raw <= 0:
+        return assets
+    scale = 100.0 / max_raw
+    for a in assets:
+        a.score = int(min(100, round(a.score * scale)))
+        a.risk = classify(a.score)
+    return assets

@@ -18,7 +18,7 @@ from mscp.ai_integration import analyze_asset_with_ai
 from mscp.alerts.telegram import send_telegram_alert
 from urllib.parse import parse_qs, urlparse
 
-from mscp.modes import RISK_MODE_META
+from mscp.modes import ANALYSIS_MODES, RISK_MODE_META
 
 
 HTML_TEMPLATE = """<!doctype html>
@@ -195,6 +195,31 @@ def _get_effective_settings(report: dict[str, Any], defaults: dict[str, Any]) ->
     merged: dict[str, Any] = {}
     merged.update(defaults.get("settings", {}))
     merged.update(report.get("settings", {}))
+
+    # Normalize common types (form posts store values as strings)
+    def _to_bool(v: object | None, default: bool = False) -> bool:
+        if v is None:
+            return default
+        s = str(v).strip().lower()
+        return s in {"1", "true", "yes", "on"}
+
+    # Coerce known keys
+    merged["telegram_enabled"] = _to_bool(merged.get("telegram_enabled"), default=False)
+    merged["email_enabled"] = _to_bool(merged.get("email_enabled"), default=False)
+    merged["ai_enabled"] = _to_bool(merged.get("ai_enabled"), default=True)
+    merged["smtp_use_tls"] = _to_bool(merged.get("smtp_use_tls"), default=True)
+
+    # Ensure smtp_port is an int when possible
+    try:
+        merged["smtp_port"] = int(str(merged.get("smtp_port", "")).strip() or 587)
+    except Exception:
+        merged["smtp_port"] = 587
+
+    # Trim string values
+    for k in ("smtp_host", "smtp_user", "smtp_pass", "email_from", "email_to", "telegram_bot_token", "telegram_chat_id"):
+        if k in merged and merged.get(k) is not None:
+            merged[k] = str(merged.get(k)).strip()
+
     return merged
 
 
@@ -295,6 +320,15 @@ def _render(
         label = RISK_MODE_META.get(m, {}).get("label", m)
         risk_mode_options.append(f"<option value='{m}'{selected}>{html.escape(label)}</option>")
 
+    analysis_mode = str(params.get("analysis_mode") or report.get("analysis_mode", "auto"))
+    if analysis_mode not in ANALYSIS_MODES:
+        analysis_mode = "auto"
+    analysis_mode_options = []
+    for m in ("auto", "1", "2", "3", "4"):
+        selected = " selected" if m == analysis_mode else ""
+        label = ANALYSIS_MODES.get(m, {}).get("label", m)
+        analysis_mode_options.append(f"<option value='{m}'{selected}>{html.escape(label)}</option>")
+
     rows = []
     for a in top_assets:
         suggestions = a.get("ai_suggestions", [])
@@ -368,15 +402,19 @@ def _render(
     )
 
     # Settings are loaded from .env and shown as read-only on dashboard.
+    # Editable settings form (persisted to report file when saved)
     path_form = (
         "<div class='card' style='margin-bottom:12px'>"
-        "<div class='k'>Runtime Settings (.env)</div>"
-        "<div class='toolbar-grid' style='grid-template-columns:1fr 1fr 1fr'>"
-        f"<div><div class='k'>Language</div><div>{html.escape(current_lang)}</div><div class='k'>Risk Mode</div><div>{html.escape(str(settings.get('risk_mode', current_risk_mode)))}</div><div class='k'>Analysis Engine</div><div>{html.escape(current_engine)}</div><div class='k'>AI Enabled</div><div>{html.escape(str(settings.get('ai_enabled', True)))}</div></div>"
-        f"<div><div class='k'>Telegram Enabled</div><div>{html.escape(str(settings.get('telegram_enabled', False)))}</div><div class='k'>Telegram Chat</div><div>{html.escape(str(settings.get('telegram_chat_id', '')) or '-')}</div></div>"
-        f"<div><div class='k'>Email Enabled</div><div>{html.escape(str(settings.get('email_enabled', False)))}</div><div class='k'>SMTP Host</div><div>{html.escape(str(settings.get('smtp_host', '')) or '-')}</div><div class='k'>Email To</div><div>{html.escape(str(settings.get('email_to', '')) or '-')}</div></div>"
+        "<div class='k'>Runtime Settings (Editable)</div>"
+        "<form method='post' action='/settings' class='toolbar-grid' style='grid-template-columns:1fr 1fr 1fr'>"
+        f"<div><div class='k'>Language</div><div><input name='lang' value='{html.escape(current_lang)}' /></div><div class='k'>Risk Mode</div><div><input name='risk_mode' value='{html.escape(str(settings.get('risk_mode', current_risk_mode)))}' /></div><div class='k'>Analysis Engine</div><div><input name='analysis_engine' value='{html.escape(current_engine)}' /></div><div class='k'>AI Enabled</div><div><input name='ai_enabled' value='{html.escape(str(settings.get('ai_enabled', True)))}' /></div></div>"
+        f"<div><div class='k'>Telegram Enabled</div><div><input name='telegram_enabled' value='{html.escape(str(settings.get('telegram_enabled', False)))}' /></div><div class='k'>Telegram Bot Token</div><div><input name='telegram_bot_token' value='{html.escape(str(settings.get('telegram_bot_token', '')))}' /></div><div class='k'>Telegram Chat</div><div><input name='telegram_chat_id' value='{html.escape(str(settings.get('telegram_chat_id', '')))}' /></div></div>"
+        f"<div><div class='k'>Email Enabled</div><div><input name='email_enabled' value='{html.escape(str(settings.get('email_enabled', False)))}' /></div><div class='k'>SMTP Host</div><div><input name='smtp_host' value='{html.escape(str(settings.get('smtp_host', '')))}' /></div><div class='k'>SMTP Port</div><div><input name='smtp_port' value='{html.escape(str(settings.get('smtp_port', 587)))}' /></div><div class='k'>SMTP User</div><div><input name='smtp_user' value='{html.escape(str(settings.get('smtp_user', '')))}' /></div><div class='k'>SMTP Pass</div><div><input name='smtp_pass' type='password' value='{html.escape(str(settings.get('smtp_pass', '')))}' /></div><div class='k'>SMTP Use TLS</div><div><input name='smtp_use_tls' value='{html.escape(str(settings.get('smtp_use_tls', True)))}' /></div><div class='k'>Email From</div><div><input name='email_from' value='{html.escape(str(settings.get('email_from', '')))}' /></div><div class='k'>Email To</div><div><input name='email_to' value='{html.escape(str(settings.get('email_to', '')))}' /></div></div>"
+        "<div style='margin-top:8px;display:flex;gap:8px;'>"
+        "<button type='submit' formmethod='post' formaction='/settings'>Save Settings</button>"
+        "<form method='post' action='/send' style='display:inline;'><button type='submit'>Send Alert Now</button></form>"
         "</div>"
-        "<div class='foot'>Edit .env to change these settings, then restart dashboard.</div>"
+        "<div class='foot'>Change these values and click 'Save Settings' to persist for this dashboard session.</div>"
         "<div class='foot'><a href='/?lang=en'>English</a> | <a href='/?lang=vi'>Vietnamese</a></div>"
         "</div>"
     )
@@ -426,8 +464,18 @@ def _render(
         f"</div>"
         f"<div class='card' style='margin-bottom:12px'>"
         f"<div class='k'>{html.escape(t('mode_defs'))}</div>"
+        f"<div style='margin-top:6px'><strong>Analysis</strong>: {html.escape(analysis_mode)} - {html.escape(ANALYSIS_MODES.get(analysis_mode, ANALYSIS_MODES['auto']).get('description', ''))}</div>"
         f"<div style='margin-top:6px'><strong>{html.escape(t('risk'))}</strong>: {html.escape(str(report.get('risk_mode', 'realistic')))} - {html.escape(risk_mode_meta.get('description', ''))}</div>"
         f"<div class='foot'>{html.escape(t('best_for'))}: {html.escape(risk_mode_meta.get('best_for', ''))}</div>"
+        f"</div>"
+        f"<div class='card' style='margin-bottom:12px'>"
+        f"<div class='k'>Analysis Mode</div>"
+        f"<form method='get' action='/' style='display:flex;gap:8px;align-items:center;flex-wrap:wrap;'>"
+        f"<input type='hidden' name='lang' value='{html.escape(current_lang)}' />"
+        f"<select name='analysis_mode'>{''.join(analysis_mode_options)}</select>"
+        f"<button type='submit'>Apply</button>"
+        f"</form>"
+        f"<div class='foot'>Top-N mode selects sources by parsed finding count.</div>"
         f"</div>"
         f"<div class='foot'>{html.escape(t('sources'))}: {html.escape(', '.join(report.get('selected_sources', [])))}</div>"
         f"<div class='grid'>"
@@ -441,6 +489,11 @@ def _render(
         f"<div class='card' style='margin-top:12px'>"
         f"<div class='k'>Per-Scanner Evaluation</div>"
         f"<table><thead><tr><th>Scanner</th><th>Done</th><th>Error</th></tr></thead><tbody>{''.join(scanner_rows) or '<tr><td colspan=3>-</td></tr>'}</tbody></table>"
+        f"</div>"
+        # Chart placeholder
+        f"<div class='card' style='margin-top:12px'>"
+        f"<div class='k'>Risk Distribution</div>"
+        f"<canvas id='riskChart' width='600' height='180'></canvas>"
         f"</div>"
         f"<div class='card' style='margin-top:12px'>"
         f"<div class='k'>{html.escape(t('recommendations'))}</div>"
@@ -464,7 +517,54 @@ def _render(
         content = f"<div class='card banner-ok' style='margin-bottom:12px'>{html.escape(notice)}</div>" + content
     if error:
         content = f"<div class='card banner-err' style='margin-bottom:12px'>Error: {html.escape(error)}</div>" + content
-    return HTML_TEMPLATE.replace("__CONTENT__", content)
+    # append pure Canvas chart script to render risk distribution (no external dependencies)
+    counts = [critical, high, medium, low]
+    max_count = max(counts) if counts else 1
+    max_count = max(max_count, 1)  # Ensure we don't divide by zero
+    chart_script = (
+        "<script>"
+        f"const _mscp_counts = {json.dumps(counts)};"
+        """(function(){{
+            const canvas = document.getElementById('riskChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width = canvas.offsetWidth;
+            const h = canvas.height = 300;
+            const labels = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
+            const colors = ['#ff4d6d', '#ff9f1c', '#ffd166', '#2ec4b6'];
+            const padding = 40;
+            const barWidth = (w - 2*padding - 30) / 4;
+            const maxVal = Math.max(..._mscp_counts, 1);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, w, h);
+            ctx.fillStyle = '#333';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            for (let i = 0; i < 4; i++) {{
+                const x = padding + i * (barWidth + 10);
+                const val = _mscp_counts[i];
+                const barH = (val / maxVal) * (h - 2*padding);
+                const barY = h - padding - barH;
+                ctx.fillStyle = colors[i];
+                ctx.fillRect(x, barY, barWidth, barH);
+                ctx.strokeStyle = '#999';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x, barY, barWidth, barH);
+                ctx.fillStyle = '#333';
+                ctx.fillText(labels[i], x + barWidth/2, h - 10);
+                ctx.fillStyle = colors[i];
+                ctx.fillText(val, x + barWidth/2, barY - 5);
+            }}
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(padding-5, h-padding);
+            ctx.lineTo(w-20, h-padding);
+            ctx.stroke();
+        }})();
+        </script>"""
+    )
+    return HTML_TEMPLATE.replace("__CONTENT__", content + chart_script)
 
 
 def run_dashboard(
@@ -492,6 +592,12 @@ def run_dashboard(
                     return
                 if parsed.path == "/aggregate":
                     self._handle_aggregate()
+                    return
+                if parsed.path == "/settings":
+                    self._handle_settings()
+                    return
+                if parsed.path == "/send":
+                    self._handle_send()
                     return
                 self.send_response(404)
                 self.end_headers()
@@ -574,6 +680,117 @@ def run_dashboard(
                 risk_mode=str(risk_mode),
             )
             self._respond_and_redirect(f'Analyzed {file_field.filename} as {scanner}', lang=lang)
+
+        def _handle_settings(self) -> None:
+            # accept form values and persist into report settings
+            form = cgi.FieldStorage(fp=self.rfile, headers=self.headers, environ={'REQUEST_METHOD': 'POST'})
+            report = _load_report(report_path)
+            report.setdefault('settings', {})
+            # list of supported settings to read from form
+            keys = [
+                'lang', 'risk_mode', 'analysis_engine', 'ai_enabled',
+                'telegram_enabled', 'telegram_bot_token', 'telegram_chat_id',
+                'email_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_use_tls', 'email_from', 'email_to', 'hf_api_key'
+            ]
+            for k in keys:
+                v = form.getfirst(k)
+                if v is None:
+                    continue
+                # try to interpret booleans and ints
+                if v.lower() in {'true', 'false'}:
+                    report['settings'][k] = v.lower() == 'true'
+                else:
+                    try:
+                        ival = int(v)
+                        report['settings'][k] = ival
+                    except Exception:
+                        report['settings'][k] = v
+
+            with open(report_path, 'w', encoding='utf-8') as f:
+                json.dump(report, f, indent=2)
+
+            Handler.session_data['settings'] = report.get('settings', {})
+            self._respond_and_redirect('Settings saved', lang=str(report.get('settings', {}).get('lang', 'en')))
+
+        def _handle_send(self) -> None:
+            # send aggregate alert using effective settings
+            report = _load_report(report_path)
+            settings = _get_effective_settings(report, defaults)
+            assets = report.get('assets', []) or report.get('aggregated', [])
+
+            # If no aggregated assets exist, try to build them from per-input results
+            if not assets:
+                per_inputs = report.get('per_inputs', []) or Handler.session_data.get('inputs', [])
+                if per_inputs:
+                    combined_map: dict[tuple[str, int], dict] = {}
+                    for entry in per_inputs:
+                        for a in entry.get('assets', []):
+                            key = (a.get('host'), int(a.get('port') or 0))
+                            acc = combined_map.get(key) or {
+                                'host': key[0], 'port': key[1], 'findings': [], 'cves': set(), 'evidence': set()
+                            }
+                            acc['findings'].extend(a.get('findings', []))
+                            for c in a.get('cves', []):
+                                acc['cves'].add(c)
+                            for ev in a.get('evidence', []):
+                                acc['evidence'].add(ev)
+                            combined_map[key] = acc
+
+                    from mscp.models import CorrelatedAsset
+
+                    assets_objs = []
+                    for k, v in combined_map.items():
+                        ca = CorrelatedAsset(host=v['host'], port=v['port'])
+                        ca.findings = v['findings']
+                        ca.cves = set(v['cves'])
+                        ca.evidence = set(v['evidence'])
+                        assets_objs.append(ca)
+
+                    # score and normalize
+                    report_for_weights = report
+                    risk_mode_for_agg = str(settings.get('risk_mode') or report_for_weights.get('risk_mode') or defaults.get('risk_mode') or 'realistic')
+                    weights = resolve_weights_for_mode(risk_mode_for_agg)
+                    scored = score_assets(assets_objs, weights=weights)
+                    scored = normalize_assets_to_100(scored)
+                    try:
+                        enrich_assets_with_ai(scored)
+                    except Exception:
+                        pass
+
+                    # persist aggregated to report and use for sending
+                    report['aggregated'] = [a.to_dict() for a in scored]
+                    report['assets'] = report['aggregated']
+                    with open(report_path, 'w', encoding='utf-8') as f:
+                        json.dump(report, f, indent=2)
+
+                    assets = report['assets']
+
+            if not assets:
+                self._respond_and_redirect('No aggregated assets to send')
+                return
+
+            msg = _build_notification_text(assets)
+            notice_parts: list[str] = []
+
+            try:
+                if bool(settings.get('telegram_enabled')):
+                    token = str(settings.get('telegram_bot_token', '')).strip()
+                    chat_id = str(settings.get('telegram_chat_id', '')).strip()
+                    if token and chat_id:
+                        send_telegram_alert(token, chat_id, msg)
+                        notice_parts.append('Telegram sent')
+            except Exception as exc:
+                notice_parts.append(f'Telegram failed: {exc}')
+
+            try:
+                if bool(settings.get('email_enabled')):
+                    email_notice = _send_email_alert(settings, 'MSCP Aggregate Risk Alert', msg)
+                    notice_parts.append(email_notice)
+            except Exception as exc:
+                notice_parts.append(f'Email failed: {exc}')
+
+            suffix = f" ({'; '.join(notice_parts)})" if notice_parts else ''
+            self._respond_and_redirect(f'Alert send completed{suffix}', lang=str(settings.get('lang', 'en')))
 
         def _handle_aggregate(self) -> None:
             # Only aggregate if all inputs are done

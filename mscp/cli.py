@@ -17,7 +17,7 @@ from mscp.engine.correlation import correlate
 from mscp.engine.diff import diff_reports
 from mscp.engine.risk import RISK_PROFILES, score_assets
 from mscp.env_config import get_dashboard_settings, get_telegram_config
-from mscp.modes import RISK_MODE_META
+from mscp.modes import ANALYSIS_MODES, RISK_MODE_META
 from mscp.plugins import PluginRegistry
 
 
@@ -96,10 +96,35 @@ def _has_input_sources(args: argparse.Namespace) -> bool:
     return any([args.nmap, args.nikto, args.openvas, args.wireshark])
 
 
+def _normalize_analysis_mode(value: object) -> str:
+    mode = str(value or "auto").strip().lower()
+    return mode if mode in ANALYSIS_MODES else "auto"
+
+
 def _select_sources(args: argparse.Namespace, source_scores: dict[str, int] | None = None) -> dict[str, str]:
-    # Simplified: include all provided sources for per-source analysis.
     provided = {k: getattr(args, k) for k in SOURCE_ORDER if getattr(args, k)}
-    return provided
+    if not provided:
+        return {}
+
+    mode = _normalize_analysis_mode(getattr(args, "analysis_mode", "auto"))
+    if mode == "auto":
+        return provided
+
+    try:
+        limit = int(mode)
+    except (TypeError, ValueError):
+        return provided
+
+    if limit <= 0:
+        return {}
+
+    source_scores = source_scores or {}
+    ranked = sorted(
+        provided.items(),
+        key=lambda item: (-int(source_scores.get(item[0], 0)), SOURCE_ORDER.index(item[0])),
+    )
+    selected = dict(ranked[:limit])
+    return {name: provided[name] for name in SOURCE_ORDER if name in selected}
 
 
 def _assets_fingerprint(report: dict) -> str:
@@ -128,6 +153,7 @@ def build_report(args: argparse.Namespace) -> dict:
             source_scores[name] = 1
 
     selected_sources = _select_sources(args, source_scores=source_scores)
+    analysis_mode = _normalize_analysis_mode(getattr(args, "analysis_mode", "auto"))
 
     nmap_data = parsed_data.get("nmap", []) if "nmap" in selected_sources else []
     nikto_data = parsed_data.get("nikto", []) if "nikto" in selected_sources else []
@@ -145,6 +171,8 @@ def build_report(args: argparse.Namespace) -> dict:
 
     report = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
+        "analysis_mode": analysis_mode,
+        "analysis_mode_meta": ANALYSIS_MODES.get(analysis_mode, ANALYSIS_MODES["auto"]),
         "risk_mode": getattr(args, "risk_mode", "realistic"),
         "risk_mode_meta": RISK_MODE_META.get(
             getattr(args, "risk_mode", "realistic"),
@@ -271,6 +299,7 @@ def handle_dashboard(args: argparse.Namespace) -> int:
             baseline=None,
             out=None,
             risk_config=params.get("risk_config") or args.risk_config,
+            analysis_mode=params.get("analysis_mode") or _mode or getattr(args, "analysis_mode", "auto"),
             risk_mode=params.get("risk_mode") or str(env_settings.get("risk_mode") or args.risk_mode),
             telegram_bot_token=None,
             telegram_chat_id=None,
@@ -296,6 +325,7 @@ def handle_dashboard(args: argparse.Namespace) -> int:
         "openvas": args.openvas or "",
         "wireshark": args.wireshark or "",
         "risk_config": args.risk_config or "",
+        "analysis_mode": getattr(args, "analysis_mode", "auto"),
         "risk_mode": str(env_settings.get("risk_mode") or args.risk_mode),
         "alert_min_risk": args.alert_min_risk,
         "lang": str(env_settings.get("lang") or "en"),
@@ -310,7 +340,7 @@ def handle_dashboard(args: argparse.Namespace) -> int:
         report_loader=_loader,
         alert_sender=_alert_sender,
         initial_params=initial_params,
-        default_mode="auto",
+        default_mode=getattr(args, "analysis_mode", "auto"),
     )
 
 
@@ -385,6 +415,12 @@ def make_parser() -> argparse.ArgumentParser:
     report_cmd.add_argument("--out", help="Output JSON path")
     report_cmd.add_argument("--risk-config", help="Risk config file (.json/.yaml)")
     report_cmd.add_argument(
+        "--analysis-mode",
+        choices=sorted(ANALYSIS_MODES.keys(), key=lambda x: (x != "auto", x)),
+        default="auto",
+        help="Analysis source selection mode",
+    )
+    report_cmd.add_argument(
         "--risk-mode",
         choices=sorted(RISK_PROFILES.keys()),
         default="realistic",
@@ -409,6 +445,12 @@ def make_parser() -> argparse.ArgumentParser:
     schedule_cmd.add_argument("--wireshark", help="Path to tshark/Wireshark JSON report")
     schedule_cmd.add_argument("--out", help="Output JSON path")
     schedule_cmd.add_argument("--risk-config", help="Risk config file (.json/.yaml)")
+    schedule_cmd.add_argument(
+        "--analysis-mode",
+        choices=sorted(ANALYSIS_MODES.keys(), key=lambda x: (x != "auto", x)),
+        default="auto",
+        help="Analysis source selection mode",
+    )
     schedule_cmd.add_argument(
         "--risk-mode",
         choices=sorted(RISK_PROFILES.keys()),
@@ -456,6 +498,12 @@ def make_parser() -> argparse.ArgumentParser:
     dashboard_cmd.add_argument("--openvas", help="Path to OpenVAS JSON or XML report")
     dashboard_cmd.add_argument("--wireshark", help="Path to tshark/Wireshark JSON/PCAP/PCAPNG report")
     dashboard_cmd.add_argument("--risk-config", help="Risk config file (.json/.yaml)")
+    dashboard_cmd.add_argument(
+        "--analysis-mode",
+        choices=sorted(ANALYSIS_MODES.keys(), key=lambda x: (x != "auto", x)),
+        default="auto",
+        help="Analysis source selection mode",
+    )
     dashboard_cmd.add_argument(
         "--risk-mode",
         choices=sorted(RISK_PROFILES.keys()),

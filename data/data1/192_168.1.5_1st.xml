@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?xml-stylesheet href="file:///D:/Nmap/nmap.xsl" type="text/xsl"?><nmaprun args="nmap -p 1-65535 -T4 -A -v 192.168.1.5" profile_name="Intense scan, all TCP ports" scanner="nmap" start="1775831582" startstr="Fri Apr 10 21:33:02 2026" version="7.98" xmloutputversion="1.04"><scaninfo type="syn" protocol="tcp" numservices="65535" services="1-65535"></scaninfo><verbose level="1"></verbose><debugging level="0"></debugging><output type="interactive">Starting Nmap 7.98 ( https://nmap.org ) at 2026-04-10 21:33 +0700
+NSE: Loaded 158 scripts for scanning.
+NSE: Script Pre-scanning.
+Initiating NSE at 21:33
+Completed NSE at 21:33, 0.00s elapsed
+Initiating NSE at 21:33
+Completed NSE at 21:33, 0.00s elapsed
+Initiating NSE at 21:33
+Completed NSE at 21:33, 0.00s elapsed
+Initiating Parallel DNS resolution of 1 host. at 21:33
+Completed Parallel DNS resolution of 1 host. at 21:33, 0.51s elapsed
+Initiating SYN Stealth Scan at 21:33
+Scanning 192.168.1.5 [65535 ports]
+Discovered open port 80/tcp on 192.168.1.5
+Discovered open port 139/tcp on 192.168.1.5
+Discovered open port 445/tcp on 192.168.1.5
+Discovered open port 443/tcp on 192.168.1.5
+Discovered open port 135/tcp on 192.168.1.5
+Discovered open port 3306/tcp on 192.168.1.5
+Discovered open port 49664/tcp on 192.168.1.5
+Discovered open port 49667/tcp on 192.168.1.5
+Discovered open port 7680/tcp on 192.168.1.5
+Discovered open port 49668/tcp on 192.168.1.5
+Discovered open port 49670/tcp on 192.168.1.5
+Discovered open port 49665/tcp on 192.168.1.5
+Discovered open port 49666/tcp on 192.168.1.5
+Discovered open port 5040/tcp on 192.168.1.5
+Completed SYN Stealth Scan at 21:33, 4.21s elapsed (65535 total ports)
+Initiating Service scan at 21:33
+Scanning 14 services on 192.168.1.5
+Service scan Timing: About 50.00% done; ETC: 21:34 (0:00:41 remaining)
+Completed Service scan at 21:34, 53.65s elapsed (14 services on 1 host)
+Initiating OS detection (try #1) against 192.168.1.5
+Retrying OS detection (try #2) against 192.168.1.5
+Retrying OS detection (try #3) against 192.168.1.5
+Retrying OS detection (try #4) against 192.168.1.5
+Retrying OS detection (try #5) against 192.168.1.5
+NSE: Script scanning 192.168.1.5.
+Initiating NSE at 21:34
+Completed NSE at 21:34, 14.27s elapsed
+Initiating NSE at 21:34
+Completed NSE at 21:34, 1.23s elapsed
+Initiating NSE at 21:34
+Completed NSE at 21:34, 0.01s elapsed
+Nmap scan report for 192.168.1.5
+Host is up (0.00036s latency).
+Not shown: 65520 closed tcp ports (reset)
+PORT      STATE    SERVICE       VERSION
+80/tcp    open     http          Apache httpd 2.4.58 ((Win64) OpenSSL/3.1.3 PHP/8.0.30)
+|_http-server-header: Apache/2.4.58 (Win64) OpenSSL/3.1.3 PHP/8.0.30
+| http-title: Welcome to XAMPP
+|_Requested resource was http://192.168.1.5/dashboard/
+|_http-favicon: Unknown favicon MD5: 56F7C04657931F2D0B79371B2D6E9820
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+135/tcp   open     msrpc         Microsoft Windows RPC
+137/tcp   filtered netbios-ns
+139/tcp   open     netbios-ssn   Microsoft Windows netbios-ssn
+443/tcp   open     ssl/http      Apache httpd 2.4.58 ((Win64) OpenSSL/3.1.3 PHP/8.0.30)
+|_ssl-date: TLS randomness does not represent time
+| tls-alpn: 
+|_  http/1.1
+| ssl-cert: Subject: commonName=localhost
+| Issuer: commonName=localhost
+| Public Key type: rsa
+| Public Key bits: 1024
+| Signature Algorithm: sha1WithRSAEncryption
+| Not valid before: 2009-11-10T23:48:47
+| Not valid after:  2019-11-08T23:48:47
+| MD5:     a0a4 4cc9 9e84 b26f 9e63 9f9e d229 dee0
+| SHA-1:   b023 8c54 7a90 5bfa 119c 4e8b acca eacf 3649 1ff6
+|_SHA-256: 0169 7338 0c0f 1df0 0bd9 593e d8d5 efa3 706c d6df 7993 f614 1272 b805 22ac dd23
+|_http-server-header: Apache/2.4.58 (Win64) OpenSSL/3.1.3 PHP/8.0.30
+| http-title: Welcome to XAMPP
+|_Requested resource was https://192.168.1.5/dashboard/
+|_http-favicon: Unknown favicon MD5: 6EB4A43CB64C97F76562AF703893C8FD
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+445/tcp   open     microsoft-ds?
+3306/tcp  open     mysql         MariaDB 10.3.23 or earlier (unauthorized)
+5040/tcp  open     unknown
+7680/tcp  open     pando-pub?
+49664/tcp open     msrpc         Microsoft Windows RPC
+49665/tcp open     msrpc         Microsoft Windows RPC
+49666/tcp open     msrpc         Microsoft Windows RPC
+49667/tcp open     msrpc         Microsoft Windows RPC
+49668/tcp open     msrpc         Microsoft Windows RPC
+49670/tcp open     msrpc         Microsoft Windows RPC
+No exact OS matches for host (If you know what OS is running on it, see https://nmap.org/submit/ ).
+TCP/IP fingerprint:
+OS:SCAN(V=7.98%E=4%D=4/10%OT=80%CT=1%CU=33160%PV=Y%DS=0%DC=L%G=Y%TM=69D90A7
+OS:5%P=i686-pc-windows-windows)SEQ(SP=101%GCD=1%ISR=10A%TI=I%CI=I%II=I%SS=S
+OS:%TS=A)SEQ(SP=102%GCD=1%ISR=109%TI=I%CI=I%II=I%SS=S%TS=A)SEQ(SP=104%GCD=1
+OS:%ISR=107%TI=I%CI=I%II=I%SS=S%TS=A)SEQ(SP=104%GCD=1%ISR=10B%TI=I%CI=I%II=
+OS:I%SS=S%TS=A)SEQ(SP=104%GCD=1%ISR=10D%TI=I%CI=I%II=I%SS=S%TS=A)OPS(O1=MFF
+OS:D7NW8ST11%O2=MFFD7NW8ST11%O3=MFFD7NW8NNT11%O4=MFFD7NW8ST11%O5=MFFD7NW8ST
+OS:11%O6=MFFD7ST11)WIN(W1=FFFF%W2=FFFF%W3=FFFF%W4=FFFF%W5=FFFF%W6=FFFF)ECN(
+OS:R=Y%DF=Y%T=80%W=FFFF%O=MFFD7NW8NNS%CC=N%Q=)T1(R=Y%DF=Y%T=80%S=O%A=S+%F=A
+OS:S%RD=0%Q=)T2(R=Y%DF=Y%T=80%W=0%S=Z%A=S%F=AR%O=%RD=0%Q=)T3(R=Y%DF=Y%T=80%
+OS:W=0%S=Z%A=O%F=AR%O=%RD=0%Q=)T4(R=Y%DF=Y%T=80%W=0%S=A%A=O%F=R%O=%RD=0%Q=)
+OS:T5(R=Y%DF=Y%T=80%W=0%S=Z%A=S+%F=AR%O=%RD=0%Q=)T6(R=Y%DF=Y%T=80%W=0%S=A%A
+OS:=O%F=R%O=%RD=0%Q=)T7(R=Y%DF=Y%T=80%W=0%S=Z%A=S+%F=AR%O=%RD=0%Q=)U1(R=Y%D
+OS:F=N%T=80%IPL=164%UN=0%RIPL=G%RID=G%RIPCK=G%RUCK=G%RUD=G)IE(R=Y%DFI=N%T=8
+OS:0%CD=Z)
+
+Uptime guess: 0.283 days (since Fri Apr 10 14:47:05 2026)
+Network Distance: 0 hops
+TCP Sequence Prediction: Difficulty=257 (Good luck!)
+IP ID Sequence Generation: Incremental
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+| smb2-time: 
+|   date: 2026-04-10T14:34:16
+|_  start_date: N/A
+| smb2-security-mode: 
+|   3.1.1: 
+|_    Message signing enabled and required
+
+NSE: Script Post-scanning.
+Initiating NSE at 21:34
+Completed NSE at 21:34, 0.00s elapsed
+Initiating NSE at 21:34
+Completed NSE at 21:34, 0.00s elapsed
+Initiating NSE at 21:34
+Completed NSE at 21:34, 0.00s elapsed
+Read data files from: D:\Nmap
+OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 87.47 seconds
+           Raw packets sent: 65614 (2.891MB) | Rcvd: 131473 (5.530MB)
+</output><host comment=""><status state="up"></status><address addr="192.168.1.5" vendor="" addrtype="ipv4"></address><hostnames></hostnames><ports><extraports count="65520" state="closed"></extraports><port portid="80" protocol="tcp"><state state="open" reason="syn-ack" reason_ttl="128"></state><service conf="10" method="probed" name="http" product="Apache httpd" version="2.4.58" extrainfo="(Win64) OpenSSL/3.1.3 PHP/8.0.30"></service></port><port portid="135" protocol="tcp"><state state="open" reason="syn-ack" reason_ttl="128"></state><service conf="10" method="probed" name="msrpc" product="Microsoft Windows RPC"></service></port><port portid="137" protocol="tcp"><state state="filtered" reason="no-response" reason_ttl="0"></state><service conf="3" method="table" name="netbios-ns"></service></port><port portid="139" protocol="tcp"><state state="open" reason="syn-ack" reason_ttl="128"></state><service conf="10" method="probed" name="netbios-ssn" product="Microsoft Windows netbios-ssn"></service></port><port portid="443" protocol="tcp"><state state="open" reason="syn-ack" reason_ttl="128"></state><service conf="10" method="probed" name="http" product="Apache httpd" version="2.4.58" extrainfo="(Win64) OpenSSL/3.1.3 PHP/8.0.30"></service></port><port portid="445" protocol="tcp"><state state="open" reason="syn-ack" reason_ttl="128"></state><service conf="3" method="table" name="microsoft-ds"></service></port><port portid="3306" protocol="tcp"><state state="open" reason="syn-ack" reason_ttl="128"></state><service conf="10" method="probed" name="mysql" product="MariaDB" version="10.3.23 or earlier" extrainfo="unauthorized"></service></port><port portid="5040" protocol="tcp"><state state="open" reason="syn-ack" reason_ttl="128"></state><service></service></port><port portid="7680" protocol="tcp"><state state="open" reason="syn-ack" reason_ttl="128"></state><service conf="3" method="table" name="pando-pub"></service></port><port portid="49664" protocol="tcp"><state state="open" reason="syn-ack" reason_ttl="128"></state><service conf="10" method="probed" name="msrpc" product="Microsoft Windows RPC"></service></port><port portid="49665" protocol="tcp"><state state="open" reason="syn-ack" reason_ttl="128"></state><service conf="10" method="probed" name="msrpc" product="Microsoft Windows RPC"></service></port><port portid="49666" protocol="tcp"><state state="open" reason="syn-ack" reason_ttl="128"></state><service conf="10" method="probed" name="msrpc" product="Microsoft Windows RPC"></service></port><port portid="49667" protocol="tcp"><state state="open" reason="syn-ack" reason_ttl="128"></state><service conf="10" method="probed" name="msrpc" product="Microsoft Windows RPC"></service></port><port portid="49668" protocol="tcp"><state state="open" reason="syn-ack" reason_ttl="128"></state><service conf="10" method="probed" name="msrpc" product="Microsoft Windows RPC"></service></port><port portid="49670" protocol="tcp"><state state="open" reason="syn-ack" reason_ttl="128"></state><service conf="10" method="probed" name="msrpc" product="Microsoft Windows RPC"></service></port></ports><os><portused state="open" proto="tcp" portid="80"></portused><portused state="closed" proto="tcp" portid="1"></portused><portused state="closed" proto="udp" portid="33160"></portused><osmatch name="Microsoft Windows 10 1607 - 11 23H2" accuracy="97" line="74791"><osclass vendor="Microsoft" osfamily="Windows" type="general purpose" osgen="11" accuracy="97"></osclass></osmatch><osmatch name="Microsoft Windows 10 1511" accuracy="96" line="74548"><osclass vendor="Microsoft" osfamily="Windows" type="general purpose" osgen="10" accuracy="96"></osclass></osmatch><osmatch name="Microsoft Windows 10 1703 or Windows 11 21H2" accuracy="96" line="74943"><osclass vendor="Microsoft" osfamily="Windows" type="general purpose" osgen="11" accuracy="96"></osclass></osmatch><osmatch name="Microsoft Windows 11 21H2" accuracy="94" line="75551"><osclass vendor="Microsoft" osfamily="Windows" type="general purpose" osgen="11" accuracy="94"></osclass></osmatch><osmatch name="Windows 11 21H2" accuracy="94" line="75587"><osclass vendor="Microsoft" osfamily="Windows" type="general purpose" osgen="11" accuracy="94"></osclass></osmatch><osmatch name="Windows Server 2022" accuracy="94" line="82130"><osclass vendor="Microsoft" osfamily="Windows" type="general purpose" osgen="2022" accuracy="94"></osclass></osmatch><osmatch name="Microsoft Windows 10 1703" accuracy="94" line="74847"><osclass vendor="Microsoft" osfamily="Windows" type="general purpose" osgen="10" accuracy="94"></osclass></osmatch><osmatch name="Microsoft Windows Server 2008 R2 SP1 or Windows 7 SP1" accuracy="94" line="80561"><osclass vendor="Microsoft" osfamily="Windows" type="general purpose" osgen="7" accuracy="94"></osclass></osmatch><osmatch name="Microsoft Windows 10 1903" accuracy="93" line="75102"><osclass vendor="Microsoft" osfamily="Windows" type="general purpose" osgen="10" accuracy="93"></osclass></osmatch><osmatch name="Microsoft Windows 10 21H1" accuracy="93" line="75368"><osclass vendor="Microsoft" osfamily="Windows" type="general purpose" osgen="10" accuracy="93"></osclass></osmatch></os><uptime seconds="24444" lastboot="Fri Apr 10 14:47:05 2026"></uptime><tcpsequence index="257" difficulty="Good luck!" values="CF06A4EF,6F6744CC,AFF9A6C2,4DA7B918,3B31FF84,787969C3"></tcpsequence><ipidsequence class="Incremental" values="C39,C3B,C3D,C3F,C41,C43"></ipidsequence><tcptssequence class="1000HZ" values="174BDEF,174BE5D,174BECB,174BF3C,174BFAA,174C019"></tcptssequence></host><runstats><finished time="1775831669" timestr="Fri Apr 10 21:34:29 2026"></finished><hosts up="1" down="0" total="1"></hosts></runstats></nmaprun>

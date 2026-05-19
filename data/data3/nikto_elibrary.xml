@@ -1,0 +1,99 @@
+<?xml version="1.0" ?>
+<!DOCTYPE niktoscan SYSTEM "/usr/share/doc/nikto/nikto.dtd">
+<niktoscan hoststest="0" options="-h http://192.168.1.5/eLibraryofVKU -o /tmp/nikto_elibrary.xml -Format xml" version="2.1.5" scanstart="Tue Apr 14 13:50:32 2026" scanend="Thu Jan  1 00:00:00 1970" scanelapsed=" seconds" nxmlversion="1.2">
+
+<scandetails targetip="192.168.1.5" targethostname="192.168.1.5" targetport="80" targetbanner="Apache/2.4.58 (Win64) OpenSSL/3.1.3 PHP/8.0.30" starttime="2026-04-14 13:50:32" sitename="http://192.168.1.5:80/eLibraryofVKU" siteip="http://192.168.1.5:80/eLibraryofVKU" hostheader="192.168.1.5" errors="0" checks="6544">
+
+
+<item id="999960" osvdbid="0" osvdblink="http://osvdb.org/0" method="GET">
+<description><![CDATA[Cookie PHPSESSID created without the httponly flag]]></description>
+<uri><![CDATA[/eLibraryofVKU/eLibraryofVKU/]]></uri>
+<namelink><![CDATA[http://192.168.1.5:80/eLibraryofVKU/eLibraryofVKU/]]></namelink>
+<iplink><![CDATA[http://192.168.1.5:80/eLibraryofVKU/eLibraryofVKU/]]></iplink>
+</item>
+
+<item id="999986" osvdbid="0" osvdblink="http://osvdb.org/0" method="GET">
+<description><![CDATA[Retrieved x-powered-by header: PHP/8.0.30]]></description>
+<uri><![CDATA[/eLibraryofVKU/eLibraryofVKU/]]></uri>
+<namelink><![CDATA[http://192.168.1.5:80/eLibraryofVKU/eLibraryofVKU/]]></namelink>
+<iplink><![CDATA[http://192.168.1.5:80/eLibraryofVKU/eLibraryofVKU/]]></iplink>
+</item>
+
+<item id="999976" osvdbid="0" osvdblink="http://osvdb.org/0" method="GET">
+<description><![CDATA[The anti-clickjacking X-Frame-Options header is not present.]]></description>
+<uri><![CDATA[/eLibraryofVKU/eLibraryofVKU/]]></uri>
+<namelink><![CDATA[http://192.168.1.5:80/eLibraryofVKU/eLibraryofVKU/]]></namelink>
+<iplink><![CDATA[http://192.168.1.5:80/eLibraryofVKU/eLibraryofVKU/]]></iplink>
+</item>
+
+<item id="999987" osvdbid="5737" osvdblink="http://osvdb.org/5737" method="GET">
+<description><![CDATA[WebLogic may reveal its internal IP or hostname in the Location header. The value is "http://localhost/eLibraryofVKU./".]]></description>
+<uri><![CDATA[/eLibraryofVKU.]]></uri>
+<namelink><![CDATA[http://192.168.1.5:80/eLibraryofVKU.]]></namelink>
+<iplink><![CDATA[http://192.168.1.5:80/eLibraryofVKU.]]></iplink>
+</item>
+
+<item id="999971" osvdbid="877" osvdblink="http://osvdb.org/877" method="TRACE">
+<description><![CDATA[HTTP TRACE method is active, suggesting the host is vulnerable to XST]]></description>
+<uri><![CDATA[/eLibraryofVKU/]]></uri>
+<namelink><![CDATA[http://192.168.1.5:80/eLibraryofVKU/]]></namelink>
+<iplink><![CDATA[http://192.168.1.5:80/eLibraryofVKU/]]></iplink>
+</item>
+
+<item id="001811" osvdbid="3092" osvdblink="http://osvdb.org/3092" method="GET">
+<description><![CDATA[/eLibraryofVKU/public/: This might be interesting...]]></description>
+<uri><![CDATA[/eLibraryofVKU/eLibraryofVKU/public/]]></uri>
+<namelink><![CDATA[http://192.168.1.5:80/eLibraryofVKU/eLibraryofVKU/public/]]></namelink>
+<iplink><![CDATA[http://192.168.1.5:80/eLibraryofVKU/eLibraryofVKU/public/]]></iplink>
+</item>
+
+<statistics elapsed="1776174873" itemsfound="" itemstested="6544" endtime="2026-04-14 13:54:33" />
+</scandetails>
+
+
+</niktoscan>
+<niktoscan hoststest="0" options="-h http://192.168.1.5/eLibraryofVKU -o /tmp/nikto_elibrary.xml -Format xml" version="2.1.5" scanstart="Tue Apr 14 13:55:10 2026" scanend="Thu Jan  1 00:00:00 1970" scanelapsed=" seconds" nxmlversion="1.2">
+
+<scandetails targetip="192.168.1.5" targethostname="192.168.1.5" targetport="80" targetbanner="Apache/2.4.58 (Win64) OpenSSL/3.1.3 PHP/8.0.30" starttime="2026-04-14 13:55:11" sitename="http://192.168.1.5:80/eLibraryofVKU" siteip="http://192.168.1.5:80/eLibraryofVKU" hostheader="192.168.1.5" errors="0" checks="6544">
+
+
+<item id="999960" osvdbid="0" osvdblink="http://osvdb.org/0" method="GET">
+<description><![CDATA[Cookie PHPSESSID created without the httponly flag]]></description>
+<uri><![CDATA[/eLibraryofVKU/eLibraryofVKU/]]></uri>
+<namelink><![CDATA[http://192.168.1.5:80/eLibraryofVKU/eLibraryofVKU/]]></namelink>
+<iplink><![CDATA[http://192.168.1.5:80/eLibraryofVKU/eLibraryofVKU/]]></iplink>
+</item>
+
+<item id="999986" osvdbid="0" osvdblink="http://osvdb.org/0" method="GET">
+<description><![CDATA[Retrieved x-powered-by header: PHP/8.0.30]]></description>
+<uri><![CDATA[/eLibraryofVKU/eLibraryofVKU/]]></uri>
+<namelink><![CDATA[http://192.168.1.5:80/eLibraryofVKU/eLibraryofVKU/]]></namelink>
+<iplink><![CDATA[http://192.168.1.5:80/eLibraryofVKU/eLibraryofVKU/]]></iplink>
+</item>
+
+<item id="999976" osvdbid="0" osvdblink="http://osvdb.org/0" method="GET">
+<description><![CDATA[The anti-clickjacking X-Frame-Options header is not present.]]></description>
+<uri><![CDATA[/eLibraryofVKU/eLibraryofVKU/]]></uri>
+<namelink><![CDATA[http://192.168.1.5:80/eLibraryofVKU/eLibraryofVKU/]]></namelink>
+<iplink><![CDATA[http://192.168.1.5:80/eLibraryofVKU/eLibraryofVKU/]]></iplink>
+</item>
+
+<item id="999987" osvdbid="5737" osvdblink="http://osvdb.org/5737" method="GET">
+<description><![CDATA[WebLogic may reveal its internal IP or hostname in the Location header. The value is "http://localhost/eLibraryofVKU./".]]></description>
+<uri><![CDATA[/eLibraryofVKU.]]></uri>
+<namelink><![CDATA[http://192.168.1.5:80/eLibraryofVKU.]]></namelink>
+<iplink><![CDATA[http://192.168.1.5:80/eLibraryofVKU.]]></iplink>
+</item>
+
+<item id="999971" osvdbid="877" osvdblink="http://osvdb.org/877" method="TRACE">
+<description><![CDATA[HTTP TRACE method is active, suggesting the host is vulnerable to XST]]></description>
+<uri><![CDATA[/eLibraryofVKU/]]></uri>
+<namelink><![CDATA[http://192.168.1.5:80/eLibraryofVKU/]]></namelink>
+<iplink><![CDATA[http://192.168.1.5:80/eLibraryofVKU/]]></iplink>
+</item>
+
+<statistics elapsed="1776175040" itemsfound="" itemstested="6544" endtime="2026-04-14 13:57:20" />
+</scandetails>
+
+
+</niktoscan>

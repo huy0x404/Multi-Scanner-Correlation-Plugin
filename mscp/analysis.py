@@ -79,7 +79,13 @@ def build_analysis_insights(report: dict[str, Any]) -> dict[str, Any]:
 
     return {
         "risk_counts": risk_counts,
-        "top_assets": top_assets,
+        "top_assets": [
+            {
+                **a,
+                "summary": f"{str(a.get('risk','')).upper()} score={a.get('score')} - { (a.get('findings') or ['-'])[0] } - { (a.get('ai_suggestions') or ['-'])[0] }",
+            }
+            for a in top_assets
+        ],
         "top_traffic": traffic_assets[:10],
         "exposed_with_traffic": exposed_and_traffic,
         "public_hosts": public_hosts,
